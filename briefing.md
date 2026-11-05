@@ -18,6 +18,9 @@ Decisões não cobertas aqui devem ser perguntadas ao usuário, não assumidas.
   autoral em todo vídeo, e com cada conta operada por um agente que é um
   mestre do seu nicho, aprende com o que funciona no mundo e com os
   próprios erros e acertos, e afunila o conteúdo com o tempo.
+- Plano inicial: criar uma ou duas contas novas no TikTok, do zero, em
+  nichos diferentes, alimentadas só pelo sistema. Resultado limpo e
+  comparação entre nichos.
 - Começa pelo TikTok; outras redes (Reels, Shorts, etc.) virão depois. O
   código não deve assumir TikTok em todo lugar: o que é específico da
   plataforma (som, métricas, formato do post.md) fica isolado para receber
@@ -228,6 +231,8 @@ Ao vincular uma pasta, indexar em SQLite, incremental e em segundo plano
 - O material gerado pelo agente entra no mesmo índice, com origem marcada
   ("pasta" ou "gerado"), para ser reutilizado e para o aprendizado comparar
   o desempenho de cada origem.
+- A indexação responde, por nicho, a profundidade da biblioteca e o risco
+  de direitos. Consultar antes de criar uma conta nova num nicho.
 
 ---
 
@@ -256,7 +261,8 @@ Ao vincular uma pasta, indexar em SQLite, incremental e em segundo plano
    refazer com comentário, ou edita gancho/texto/descrição direto. Toda
    edição do usuário é registrada e vira aprendizado (seção 8.2).
 
-- Quantidade por rodada: configurada no perfil.
+- Quantidade por rodada: configurada no perfil (reduzida em regime de
+  conta nova, seção 8.8).
 - Variar formatos, fontes de material e estilo visual dentro da rodada, de
   propósito.
 - Um vídeo que falha não derruba a rodada.
@@ -456,6 +462,31 @@ agente (14).
 - Responder comentários com a própria voz. O agente pode sugerir respostas,
   mas quem responde é o usuário.
 
+### 8.8 Contas novas
+Quando o perfil corresponde a uma conta criada do zero, o agente adota um
+regime de início, até a conta estabilizar (cerca de duas a quatro
+semanas, a critério do agente com base nas métricas):
+- Aquecimento antes do primeiro post: por alguns dias, o usuário usa a
+  conta como pessoa (assiste vídeos do nicho, curte, segue, comenta). O
+  agente sugere o que assistir e seguir, com base no estudo, para ajudar
+  o algoritmo a classificar a conta no nicho antes do primeiro vídeo.
+- Volume reduzido no começo: um ou dois posts por dia nas primeiras
+  semanas, subindo para a quantidade configurada no perfil quando a conta
+  estabilizar. O agente propõe o aumento; o usuário confirma.
+- Assunto fechado, formato variado: os primeiros posts (cerca de vinte)
+  devem ser claramente do mesmo nicho, para o algoritmo classificar a
+  conta rápido. A variação obrigatória continua, mas no formato, não no
+  assunto. Em perfis variados, começar por um nicho só e abrir os outros
+  depois.
+- Métricas de conta nova oscilam muito e dizem pouco. O agente não tira
+  conclusão nas primeiras semanas além do mínimo de posts da seção 8.5, e
+  avisa o usuário disso no primeiro relatório semanal para alinhar a
+  expectativa.
+Configuração: na aba Publicação, campo "Conta nova" (ligado/desligado),
+marcado no onboarding. Ao desligar, o agente sai do regime de início e
+passa para a estratégia normal. Comparação entre contas é feita pelo
+usuário na tela Comparar perfis (9.6).
+
 ---
 
 ## 9. Interface
@@ -472,17 +503,18 @@ agente (14).
 - v1 sem login nem múltiplos usuários, mas nada que impeça isso depois.
 - Barra lateral do app: Perfis, Custo, Técnico, Configurações globais. As
   telas de cada perfil (revisão, conversa, relatório, configurações) abrem
-  a partir de Perfis. As telas Bastidores abrem a partir de Técnico.
+  a partir de Perfis. A aba Técnico contém a lista de perfis com estado,
+  o acesso à tela Bastidores de cada um, e a opção Comparar.
 
 ### 9.2 Onboarding
 Nome; personalidade (3 adjetivos + uma frase); objetivos (quantos quiser,
 em ordem de prioridade); nicho(s) e proporção opcional; idioma de origem;
 idioma de saída; pasta(s); seleção automática ou manual; fonte de material
-(padrão: livre); quantidade por rodada; aprovação ligada ou não; gravar a
-própria voz (opcional). NÃO perguntar público-alvo (trabalho do agente),
-contas de referência nem "o que não quer" (atrapalham o aprendizado). O
-agente escreve a primeira versão de preferencias_usuario.md e da
-identidade; o usuário aprova.
+(padrão: livre); quantidade por rodada; aprovação ligada ou não; conta
+nova ou com histórico; gravar a própria voz (opcional). NÃO perguntar
+público-alvo (trabalho do agente), contas de referência nem "o que não
+quer" (atrapalham o aprendizado). O agente escreve a primeira versão de
+preferencias_usuario.md e da identidade; o usuário aprova.
 
 ### 9.3 Configurações do perfil (nove abas)
 1. Identidade: nome, @, personalidade, objetivos, idioma de saída, séries
@@ -499,7 +531,8 @@ identidade; o usuário aprova.
    qualidade, voz do usuário), legendas/capa/ritmo/sincronia ("agente
    decide" com ajuste opcional), serviço de voz principal e reserva.
 4. Publicação: aprovação (sensível), horários (agente ou fixos), fuso,
-   horário da rodada automática, pasta de saída.
+   horário da rodada automática, pasta de saída, conta nova
+   (ligado/desligado; sensível ao desligar antes de o agente propor).
 5. Métricas: conta vinculada, envio manual, dia e hora do lembrete.
 6. Aprendizado: proporção 70/30, fila de hipóteses, contas acompanhadas,
    versão do estilo e histórico.
@@ -513,9 +546,9 @@ identidade; o usuário aprova.
 
 Mudanças sensíveis (confirmação): desligar aprovação; trocar pastas; mudar
 nichos ou idioma de perfil com histórico; mudar fonte de material; ligar
-geração por modelo de IA; editar preferências em ponto que contradiz
-aprendizado forte (o agente mostra o conflito); desconectar a conta; zona
-de risco.
+geração por modelo de IA; desligar "conta nova" antes de o agente propor;
+editar preferências em ponto que contradiz aprendizado forte (o agente
+mostra o conflito); desconectar a conta; zona de risco.
 
 ### 9.4 Outras telas
 Lista de perfis (com indicador de estado de cada um); indexação; revisão
@@ -611,6 +644,29 @@ Regras:
   na lista de perfis, na aba Técnico e na tela do relatório, com link
   para a entrada correspondente.
 
+### 9.6 Comparar perfis (na aba Técnico)
+
+Na aba Técnico, além da lista de perfis, uma opção "Comparar". O usuário
+marca os perfis que quer (dois ou mais) e escolhe o período. O app mostra
+um quadro com os perfis em colunas e, em linhas:
+- Data de início, posts publicados, posts por rodada atual.
+- Views, likes, comentários, shares, seguidores (totais e por post).
+- Retenção média e % até o fim, quando o usuário tiver enviado.
+- Distribuição de formatos e fontes de material.
+- Custo total e por post.
+- Estado de saúde do agente (resumo das verificações).
+Gráfico simples por métrica ao longo do tempo, com os perfis sobrepostos.
+Exportável.
+
+Regras:
+- Só leitura. Nada aqui altera os perfis nem compartilha memória entre
+  agentes; é o app mostrando números que já tem.
+- Não é um lugar para o agente tirar conclusão; a comparação é do
+  usuário. Se ele quiser que um agente aprenda algo que viu no quadro,
+  diz pela conversa daquele perfil, e vira preferência.
+- Perfis com datas de início diferentes mostram aviso de que a
+  comparação não é em condições iguais.
+
 ---
 
 ## 10. Estudo inicial (antes de fechar o motor de edição)
@@ -624,6 +680,8 @@ tendencias.md. Mesma amplitude da seção 8.3, mais:
   qualidade e em quanto tempo.
 - Estudo de quais formatos gerados funcionam no nicho hoje e por quê, sem
   assumir nenhum de antemão.
+- Profundidade da biblioteca e risco de direitos por nicho, para a escolha
+  dos nichos das contas novas.
 - Bateria completa de testes do agente (seção 14.1), com 10 a 20 vídeos
   de teste, antes do primeiro post real.
 - Padrões de partida a validar: gancho nos primeiros 1-2s; cortar tempo
@@ -637,12 +695,13 @@ v1: seções 2 a 7; mandato; geração por código e híbridos; imagens por IA
 se houver GPU; métricas (8.1); experimentos (8.2); edições do usuário como
 aprendizado; curva de retenção; revisor independente com critério "parece
 genérico/máquina"; verificações automáticas e manuais (14); relatório
-semanal; anti-alucinação; conversa com o agente; configurações completas;
-tela Bastidores; estudo inicial; voz do usuário.
+semanal; anti-alucinação; conversa com o agente; regime de conta nova
+(8.8); configurações completas; tela Bastidores; Comparar perfis como
+tela simples (quadro + um gráfico); estudo inicial; voz do usuário.
 v2: índice de momentos; catálogo de ganchos; comentários como pauta;
 contas acompanhadas; vídeo por modelo de IA (quando o usuário habilitar);
-adaptadores para outras plataformas. Versionamento de estilo entra na v1
-se for barato.
+adaptadores para outras plataformas; refinamentos de Comparar perfis.
+Versionamento de estilo entra na v1 se for barato.
 Descartado: aprendizado compartilhado entre perfis; perguntas de público,
 referências e exclusões no onboarding; publicação automática por enquanto.
 
@@ -650,7 +709,8 @@ referências e exclusões no onboarding; publicação automática por enquanto.
 
 ## 12. Perguntas em aberto
 - Sistema operacional e se há GPU NVIDIA.
-- Idiomas e nichos dos primeiros perfis.
+- Idiomas e nichos dos primeiros perfis (consultar a indexação para
+  profundidade da biblioteca e risco de direitos por nicho).
 - Chave da API do Claude e teto inicial de custo.
 - Se aceita custo com geração de vídeo por modelo de IA, e qual teto.
 
@@ -666,7 +726,8 @@ nunca postou.
 2. Versão mínima ponta a ponta: um vídeo, um post.md, postar de verdade.
 3. Indexação completa, testada em pasta pequena.
 4. Estudo inicial (seção 10), incluindo a bateria de testes do agente.
-5. Perfis, onboarding, arquivos de memória, preferências, voz do usuário.
+5. Perfis, onboarding, arquivos de memória, preferências, voz do usuário,
+   regime de conta nova.
 6. Rotina diária de tendências, edição e estratégia.
 7. Motor de edição completo: plano JSON → ffmpeg; legendas; narração;
    batidas; geração por código.
@@ -678,7 +739,7 @@ nunca postou.
 11. Conversa com o agente e destilação de preferências.
 12. Custo e teto.
 13. Rodada automática (Agendador de Tarefas / cron).
-14. Tela Bastidores e aba Técnico.
+14. Tela Bastidores, aba Técnico e Comparar perfis.
 15. Interface completa, com o usuário.
 
 ---
@@ -717,7 +778,8 @@ Dispersão (painel semanal):
 - Distribuição de formatos, fontes de material, vozes e estilos nas
   últimas N rodadas. Alerta se um formato passa de 60% (monotonia) ou se
   nenhum chega a 25% (dispersão) depois das primeiras semanas; limites
-  ajustáveis em testes.md.
+  ajustáveis em testes.md. Em regime de conta nova, o critério de
+  dispersão vale para formato, não para assunto.
 - Proporção real explorar/explorar versus a configurada.
 - Hipóteses: abertas, fechadas com conclusão, abandonadas sem conclusão.
   Abandono alto é dispersão.
