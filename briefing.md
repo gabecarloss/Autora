@@ -1,4 +1,4 @@
-# Autoral — Briefing do projeto
+# Autora — Briefing do projeto
 Data: 05/11/2026. Consolidação de uma conversa entre o usuário e o Claude.
 O Claude que ler isto vai rodar no PC do usuário e construir o sistema.
 Decisões não cobertas aqui devem ser perguntadas ao usuário, não assumidas.
