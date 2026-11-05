@@ -1,4 +1,4 @@
-# Autora — Briefing do projeto
+# Autoral — Briefing do projeto
 Data: 05/11/2026. Consolidação de uma conversa entre o usuário e o Claude.
 O Claude que ler isto vai rodar no PC do usuário e construir o sistema.
 Decisões não cobertas aqui devem ser perguntadas ao usuário, não assumidas.
@@ -261,6 +261,8 @@ Ao vincular uma pasta, indexar em SQLite, incremental e em segundo plano
    refazer com comentário, ou edita gancho/texto/descrição direto. Toda
    edição do usuário é registrada e vira aprendizado (seção 8.2).
 
+- A rodada roda no modo de geração configurado (seção 15.1): automática
+  no horário do perfil, ou manual por pedido do usuário.
 - Quantidade por rodada: configurada no perfil (reduzida em regime de
   conta nova, seção 8.8).
 - Variar formatos, fontes de material e estilo visual dentro da rodada, de
@@ -437,7 +439,8 @@ que já fez.
   primeiro post do dia mais forte, momentos a evitar. Em aprendizados.md;
   o horário de cada post.md vem dela, com motivo.
 - Resultado com data em tendencias.md; rodadas no mesmo dia reaproveitam.
-  O agente está SEMPRE se atualizando.
+  O agente está SEMPRE se atualizando. Com o sistema pausado (15.1), o
+  estudo não roda.
 
 ### 8.4 Relatório semanal
 O que aprendeu, o que vai mudar, o que quer testar, onde está incerto.
@@ -493,7 +496,8 @@ usuário na tela Comparar perfis (9.6).
 
 ### 9.1 Princípios
 - "Agente", nunca "IA", "modelo" ou "prompt". Verbos do usuário. Sem
-  "pipeline" ou "rodada" na interface (nomes amigáveis a decidir).
+  "pipeline" ou "rodada" na interface; os nomes amigáveis ficam em
+  `GLOSSARIO.md` (seção 15.5).
 - Cada tela responde: o que é isso, por que importa, o que acontece se eu
   mudar.
 - Padrão "deixar o agente decidir" na maioria dos campos.
@@ -501,10 +505,12 @@ usuário na tela Comparar perfis (9.6).
   configurações em sequência, uma pergunta por tela. Uma única fonte.
 - Mudanças sensíveis pedem confirmação explícita, com frase explicando.
 - v1 sem login nem múltiplos usuários, mas nada que impeça isso depois.
-- Barra lateral do app: Perfis, Custo, Técnico, Configurações globais. As
-  telas de cada perfil (revisão, conversa, relatório, configurações) abrem
-  a partir de Perfis. A aba Técnico contém a lista de perfis com estado,
-  o acesso à tela Bastidores de cada um, e a opção Comparar.
+- Barra lateral do app: Perfis, Custo, Técnico, Configurações globais, e
+  o indicador de estado do sistema (ligado / pausado / manual) com o
+  botão de pausar/ligar. As telas de cada perfil (revisão, conversa,
+  relatório, configurações) abrem a partir de Perfis. A aba Técnico
+  contém a lista de perfis com estado, o acesso à tela Bastidores de cada
+  um, e a opção Comparar.
 
 ### 9.2 Onboarding
 Nome; personalidade (3 adjetivos + uma frase); objetivos (quantos quiser,
@@ -532,7 +538,8 @@ preferencias_usuario.md e da identidade; o usuário aprova.
    decide" com ajuste opcional), serviço de voz principal e reserva.
 4. Publicação: aprovação (sensível), horários (agente ou fixos), fuso,
    horário da rodada automática, pasta de saída, conta nova
-   (ligado/desligado; sensível ao desligar antes de o agente propor).
+   (ligado/desligado; sensível ao desligar antes de o agente propor),
+   pausar este perfil, limite de rodadas aguardando revisão (15.2).
 5. Métricas: conta vinculada, envio manual, dia e hora do lembrete.
 6. Aprendizado: proporção 70/30, fila de hipóteses, contas acompanhadas,
    versão do estilo e histórico.
@@ -551,9 +558,11 @@ editar preferências em ponto que contradiz aprendizado forte (o agente
 mostra o conflito); desconectar a conta; zona de risco.
 
 ### 9.4 Outras telas
-Lista de perfis (com indicador de estado de cada um); indexação; revisão
-do lote (com edição direta de textos); conversa com o agente; relatório
-semanal; custo; configurações globais (chaves de API, serviços).
+Lista de perfis (com indicador de estado de cada um e botão "gerar agora"
+por perfil); indexação; revisão do lote (com edição direta de textos);
+conversa com o agente; relatório semanal; custo; configurações globais
+(chaves de API, serviços, modo de geração automático/manual, pausar/ligar
+o sistema, retenção de logs e de cópias de segurança).
 
 ### 9.5 Tela Bastidores (uma por perfil, aba "Técnico")
 
@@ -574,15 +583,16 @@ e por tipo. Seções:
      etapa (estudo, seleção, conceito, edição, revisor, verificações,
      pacote), cada chamada a serviço (modelo, voz, som, Display API) com
      duração e resultado, cada decisão com o motivo, cada alerta, cada
-     ação do usuário (aprovação, edição, descarte, conversa).
+     ação do usuário (aprovação, edição, descarte, conversa, pausa).
    - Cada entrada pode ser aberta: detalhe completo (raciocínio
      registrado, plano de edição, resposta do revisor, erro inteiro).
    - Filtros: por rodada, por post, por tipo (decisão, erro, serviço,
      teste, usuário), por data.
 
 2. Rodadas
-   - Lista de rodadas com estado (concluída, parcial, falhou), vídeos
-     pedidos e entregues, tempo total e por etapa, custo.
+   - Lista de rodadas com estado (concluída, parcial, falhou), origem
+     (automática ou manual), vídeos pedidos e entregues, tempo total e
+     por etapa, custo.
    - Ao abrir uma rodada: cada vídeo com seu caminho completo, da seleção
      ao pacote, e onde parou se falhou.
 
@@ -607,14 +617,16 @@ e por tipo. Seções:
    - Indexação: total de vídeos, indexados, pendentes, falhas (com
      motivo), duplicatas encontradas, tempo estimado restante.
    - Uso: quantos vídeos já usados, quantos disponíveis por nicho, os
-     mais antigos sem uso.
+     mais antigos sem uso, estimativa de quantas semanas restam no ritmo
+     atual (15.3).
    - Material gerado: quantidade, espaço em disco, reutilizações.
 
 6. Memória
    - Cada arquivo de memória com data da última alteração, tamanho e
      histórico de versões; abrir uma versão antiga e comparar com a
      atual.
-   - Banco: tamanho, última cópia de segurança, botão para fazer cópia.
+   - Banco: tamanho, última cópia de segurança (automática, 15.6), botão
+     para fazer cópia agora e para restaurar.
 
 7. Custo detalhado
    - O que a aba Custo resume, aqui por chamada: data, etapa, serviço,
@@ -640,9 +652,10 @@ Regras:
 - A tela nunca é obrigatória para usar o app; é para quando algo deu
   errado ou o usuário quer entender o que o agente fez.
 - Alertas importantes (serviço caído, rodada falhou, custo perto do
-  teto, verificação falhando repetidamente) aparecem também fora dela:
-  na lista de perfis, na aba Técnico e na tela do relatório, com link
-  para a entrada correspondente.
+  teto, verificação falhando repetidamente, biblioteca acabando,
+  geração pausada por acúmulo) aparecem também fora dela: na lista de
+  perfis, na aba Técnico e na tela do relatório, com link para a entrada
+  correspondente.
 
 ### 9.6 Comparar perfis (na aba Técnico)
 
@@ -696,8 +709,9 @@ se houver GPU; métricas (8.1); experimentos (8.2); edições do usuário como
 aprendizado; curva de retenção; revisor independente com critério "parece
 genérico/máquina"; verificações automáticas e manuais (14); relatório
 semanal; anti-alucinação; conversa com o agente; regime de conta nova
-(8.8); configurações completas; tela Bastidores; Comparar perfis como
-tela simples (quadro + um gráfico); estudo inicial; voz do usuário.
+(8.8); configurações completas; modo de geração, pausa e proteções
+operacionais (15); tela Bastidores; Comparar perfis como tela simples
+(quadro + um gráfico); estudo inicial; voz do usuário.
 v2: índice de momentos; catálogo de ganchos; comentários como pauta;
 contas acompanhadas; vídeo por modelo de IA (quando o usuário habilitar);
 adaptadores para outras plataformas; refinamentos de Comparar perfis.
@@ -722,7 +736,7 @@ semanas, com versão mínima, e aprender com posts reais enquanto o resto é
 construído. Um sistema que postou 30 vídeos vale mais que um perfeito que
 nunca postou.
 1. Perguntas da seção 12. Estrutura do projeto, pasta de perfil, SQLite,
-   mandato.md, logs desde o início.
+   mandato.md, logs e cópia de segurança desde o início, GLOSSARIO.md.
 2. Versão mínima ponta a ponta: um vídeo, um post.md, postar de verdade.
 3. Indexação completa, testada em pasta pequena.
 4. Estudo inicial (seção 10), incluindo a bateria de testes do agente.
@@ -738,7 +752,8 @@ nunca postou.
     verificações manuais.
 11. Conversa com o agente e destilação de preferências.
 12. Custo e teto.
-13. Rodada automática (Agendador de Tarefas / cron).
+13. Rodada automática (Agendador de Tarefas / cron), modo de geração,
+    pausa e proteções operacionais (15).
 14. Tela Bastidores, aba Técnico e Comparar perfis.
 15. Interface completa, com o usuário.
 
@@ -836,3 +851,54 @@ alto. Não travam nada se ficarem sem resposta; ficam pendentes.
 - Regras: testes.md na pasta do perfil, editável pelo usuário.
 - Interface: seção "Saúde do agente" da tela Bastidores (9.5). Alertas
   também na lista de perfis, na aba Técnico e na tela do relatório.
+
+---
+
+## 15. Regras operacionais
+
+### 15.1 Modo de geração (configurações globais)
+- Automático: o sistema roda a rodada de cada perfil diariamente, no
+  horário configurado no perfil (aba Publicação). Padrão.
+- Manual: nada roda sozinho. O usuário entra no perfil e pede "gerar
+  agora". Útil em viagens, pausas ou no começo, enquanto ainda está
+  calibrando.
+- Pausar/ligar o sistema: botão global que suspende todas as rodadas
+  automáticas sem mudar nenhuma configuração de perfil. Ao religar, o
+  sistema não tenta recuperar as rodadas perdidas; simplesmente volta ao
+  horário normal. Enquanto pausado, o estudo diário também não roda (não
+  há rodada, não há custo).
+- "Pausar" e "manual" são coisas diferentes: pausar é temporário e
+  preserva tudo; manual é um modo de operação. No pausado, o botão
+  "gerar agora" de cada perfil continua funcionando.
+- Por perfil, na aba Publicação, um campo "Pausar este perfil" faz o
+  mesmo para um perfil só.
+- Indicador visível na barra lateral: sistema ligado / pausado / manual.
+
+### 15.2 Proteção contra acúmulo (só no modo automático)
+- Com aprovação ligada, se houver mais de duas rodadas aguardando revisão,
+  o agente pausa a geração daquele perfil e avisa. Retoma quando o usuário
+  revisar. Limite ajustável no perfil.
+
+### 15.3 Biblioteca acabando
+- Quando o material disponível num nicho der para menos de duas semanas
+  no ritmo atual, alerta na lista de perfis e no relatório. O agente
+  propõe compensar com geração; o usuário decide.
+
+### 15.4 Pilha de tecnologia
+- Não definida de propósito, exceto o que o briefing implica (Python no
+  backend, ffmpeg, Whisper local, SQLite por perfil). O Claude Code propõe
+  o resto (interface, bibliotecas) e pergunta antes de fixar.
+
+### 15.5 Glossário
+- Arquivo `GLOSSARIO.md` no repositório, mapeando cada termo interno
+  (rodada, pacote, revisor, mandato, etc.) para o nome usado na interface.
+  A interface só usa os nomes do glossário.
+
+### 15.6 Segurança e cópia de segurança
+- Chaves de API: só na configuração global, nunca dentro de um perfil,
+  nunca em texto puro em disco, nunca em logs ou exportações.
+- Cópia de segurança automática dos perfis (banco e arquivos de memória),
+  diária, com retenção configurável, ligada por padrão. Restauração pela
+  tela Bastidores.
+- O agente nunca publica nada e nunca age na conta do usuário. A obtenção
+  de sons para análise (yt-dlp) não usa a conta do usuário.
