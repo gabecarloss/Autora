@@ -52,8 +52,9 @@ O agente decide formato, fonte de material, tema, som, voz, ritmo, séries e
 estratégia de postagem, e muda conforme aprende. Perfis NÃO compartilham
 memória: nichos e idiomas diferentes aprendem coisas diferentes.
 
-Cada perfil vive numa pasta própria e portátil: `config.json`, banco SQLite
-e os arquivos de memória. Chaves de API ficam em configuração global do app.
+Cada perfil vive numa pasta própria e portátil: `config.json`, banco SQLite,
+logs e os arquivos de memória. Chaves de API ficam em configuração global
+do app.
 
 Arquivos de memória do perfil:
 - `mandato.md`: o texto da seção 3.1. Base de toda chamada ao modelo. Igual
@@ -67,14 +68,16 @@ Arquivos de memória do perfil:
 - `publico.md`: quem é o público, escrito e atualizado pelo agente a partir
   de métricas e comentários.
 - `ganchos.md`: catálogo de padrões de gancho com desempenho.
+- `testes.md`: regras dos testes do agente (seção 14), editável.
 - Banco de material gerado: tudo que o agente cria (personagens, cenários,
   animações, elementos visuais) fica salvo, indexado e reutilizável, com
   estilo consistente por série. O personagem próprio da conta, se houver,
   é parte da identidade (seção 6).
 - Histórico de posts (banco): formato, fonte de material, gancho, duração,
   tema, som, voz, horário, versão de estilo, referência (se adaptação),
-  motivo de cada escolha, edições feitas pelo usuário na revisão, e
-  métricas.
+  motivo de cada escolha, edições feitas pelo usuário na revisão,
+  resultados de testes, e métricas.
+- Logs (seção 9.5): arquivos por dia, retenção configurável.
 
 ### 3.1 O agente: mandato
 
@@ -246,8 +249,10 @@ Ao vincular uma pasta, indexar em SQLite, incremental e em segundo plano
    texto, sincronia da legenda, volume, duração, padrão mínimo de
    transformação, e se o vídeo parece genérico ou feito por máquina (e por
    quê). Só então libera. Quem gera não avalia.
-6. Pacote de publicação (seção 2).
-7. Tela de revisão (se aprovação ligada): o usuário aprova, descarta, pede
+6. Verificações automáticas (seção 14.2). Falha em vídeo específico
+   devolve o vídeo ao agente para refazer.
+7. Pacote de publicação (seção 2).
+8. Tela de revisão (se aprovação ligada): o usuário aprova, descarta, pede
    refazer com comentário, ou edita gancho/texto/descrição direto. Toda
    edição do usuário é registrada e vira aprendizado (seção 8.2).
 
@@ -255,6 +260,8 @@ Ao vincular uma pasta, indexar em SQLite, incremental e em segundo plano
 - Variar formatos, fontes de material e estilo visual dentro da rodada, de
   propósito.
 - Um vídeo que falha não derruba a rodada.
+- Toda etapa, decisão, chamada a serviço e erro é registrada no log do
+  perfil (seção 9.5).
 
 ---
 
@@ -349,8 +356,9 @@ só com transformação pesada.
   Vozes correspondem ao idioma da conta.
 
 ### 7.4 Custo
-- Aba "Custo": acumulado por perfil e total, por dia/semana/mês; média por
-  post; projeção. Não aparece no post.md nem na revisão.
+- Aba "Custo" na barra lateral: acumulado por perfil e total, por
+  dia/semana/mês; média por post; projeção. Não aparece no post.md nem na
+  revisão. Detalhe por chamada fica na tela Bastidores (9.5).
 - Teto mensal por perfil, com aviso. Custos: API do Claude e, se
   habilitado, geração por modelo de IA. Voz, legenda e geração por código
   são zero.
@@ -392,7 +400,7 @@ que já fez.
 - Comentários (via print): o agente extrai o que o público pediu, achou
   graça ou criticou, e transforma em pautas e vídeos de resposta.
 - Lembrete semanal: o agente pede a atualização em dia e hora configurados,
-  junto com o relatório da semana (8.4).
+  junto com o relatório da semana (8.4) e as verificações manuais (14.3).
 
 ### 8.2 Experimentos, análise e edições do usuário
 - Fila de hipóteses; testar UMA variável por vez. Padrão 70% no que
@@ -401,8 +409,9 @@ que já fez.
   comum (formato, fonte de material, gancho, duração, tema, som, voz,
   horário, versão), e como se comparam com o que funciona no mundo.
   Conclusões em aprendizados.md.
-- Edições do usuário na revisão são o dado mais valioso no começo. O
-  agente registra exatamente o que mudou e aprende com isso.
+- Edições do usuário na revisão e respostas das verificações manuais são o
+  dado mais valioso no começo. O agente registra exatamente o que mudou e
+  aprende com isso, com peso alto.
 - Catálogo de ganchos (ganchos.md): padrões, não textos, com desempenho.
 
 ### 8.3 Estudo diário de tendências, edição e estratégia
@@ -426,6 +435,8 @@ que já fez.
 
 ### 8.4 Relatório semanal
 O que aprendeu, o que vai mudar, o que quer testar, onde está incerto.
+Inclui as verificações manuais da semana (14.3) e alertas de saúde do
+agente (14).
 
 ### 8.5 Anti-alucinação
 - Toda afirmação em tendencias.md precisa de fonte e data.
@@ -459,6 +470,9 @@ O que aprendeu, o que vai mudar, o que quer testar, onde está incerto.
   configurações em sequência, uma pergunta por tela. Uma única fonte.
 - Mudanças sensíveis pedem confirmação explícita, com frase explicando.
 - v1 sem login nem múltiplos usuários, mas nada que impeça isso depois.
+- Barra lateral do app: Perfis, Custo, Técnico, Configurações globais. As
+  telas de cada perfil (revisão, conversa, relatório, configurações) abrem
+  a partir de Perfis. As telas Bastidores abrem a partir de Técnico.
 
 ### 9.2 Onboarding
 Nome; personalidade (3 adjetivos + uma frase); objetivos (quantos quiser,
@@ -492,8 +506,8 @@ identidade; o usuário aprova.
 7. Preferências do usuário: preferencias_usuario.md editável, com aviso de
    prioridade; histórico das destilações.
 8. Memória do agente (leitura, "corrigir pela conversa"): mandato.md,
-   aprendizados.md, tendencias.md, publico.md, ganchos.md, banco de
-   material gerado.
+   aprendizados.md, tendencias.md, publico.md, ganchos.md, testes.md,
+   banco de material gerado.
 9. Avançado: teto de custo; exportar/importar perfil; zona de risco com
    confirmação dupla (resetar aprendizados, apagar memória, apagar perfil).
 
@@ -504,9 +518,98 @@ aprendizado forte (o agente mostra o conflito); desconectar a conta; zona
 de risco.
 
 ### 9.4 Outras telas
-Lista de perfis; indexação; revisão do lote (com edição direta de textos);
-conversa com o agente; relatório semanal; custo; configurações globais
-(chaves de API, serviços).
+Lista de perfis (com indicador de estado de cada um); indexação; revisão
+do lote (com edição direta de textos); conversa com o agente; relatório
+semanal; custo; configurações globais (chaves de API, serviços).
+
+### 9.5 Tela Bastidores (uma por perfil, aba "Técnico")
+
+Acesso: aba "Técnico" na barra lateral. Dentro dela, a lista de perfis,
+cada um com indicador de estado (tudo certo / alerta / falha), para ver de
+longe qual precisa de atenção. Cada perfil abre a sua tela Bastidores; um
+seletor dentro da tela permite trocar de perfil sem voltar. A tela não
+aparece nas configurações nem nas telas amigáveis; o único caminho é pela
+aba Técnico e pelos links dos alertas.
+
+Tela única para tudo que é técnico de um agente. Linguagem direta, sem
+jargão de programador ("o serviço de voz principal falhou e o reserva
+assumiu", não "edge-tts timeout, fallback XTTS"). Busca e filtro por data
+e por tipo. Seções:
+
+1. Linha do tempo (o log principal)
+   - Tudo que o agente fez, em ordem: início e fim de cada rodada, cada
+     etapa (estudo, seleção, conceito, edição, revisor, verificações,
+     pacote), cada chamada a serviço (modelo, voz, som, Display API) com
+     duração e resultado, cada decisão com o motivo, cada alerta, cada
+     ação do usuário (aprovação, edição, descarte, conversa).
+   - Cada entrada pode ser aberta: detalhe completo (raciocínio
+     registrado, plano de edição, resposta do revisor, erro inteiro).
+   - Filtros: por rodada, por post, por tipo (decisão, erro, serviço,
+     teste, usuário), por data.
+
+2. Rodadas
+   - Lista de rodadas com estado (concluída, parcial, falhou), vídeos
+     pedidos e entregues, tempo total e por etapa, custo.
+   - Ao abrir uma rodada: cada vídeo com seu caminho completo, da seleção
+     ao pacote, e onde parou se falhou.
+
+3. Serviços
+   - Estado atual de cada serviço: modelo (API do Claude), voz principal
+     e reserva, legenda (Whisper), obtenção de som (yt-dlp), geração por
+     código, imagens por IA, vídeo por modelo (se habilitado), Display
+     API. Funcionando / em falha / não configurado, última verificação,
+     última falha e motivo.
+   - Histórico de falhas por serviço e quantas vezes o reserva assumiu.
+   - Limites: uso contra cota quando o serviço tiver, e quando reinicia.
+
+4. Saúde do agente (seção 14)
+   - Situação atual das verificações automáticas: o que está passando e o
+     que está falhando, com os posts afetados.
+   - Painel de dispersão.
+   - Histórico semana a semana: o agente está melhorando ou o mesmo
+     problema volta.
+   - Pendências manuais (amostras aguardando resposta do usuário).
+
+5. Biblioteca e material
+   - Indexação: total de vídeos, indexados, pendentes, falhas (com
+     motivo), duplicatas encontradas, tempo estimado restante.
+   - Uso: quantos vídeos já usados, quantos disponíveis por nicho, os
+     mais antigos sem uso.
+   - Material gerado: quantidade, espaço em disco, reutilizações.
+
+6. Memória
+   - Cada arquivo de memória com data da última alteração, tamanho e
+     histórico de versões; abrir uma versão antiga e comparar com a
+     atual.
+   - Banco: tamanho, última cópia de segurança, botão para fazer cópia.
+
+7. Custo detalhado
+   - O que a aba Custo resume, aqui por chamada: data, etapa, serviço,
+     tokens ou unidades, valor. Exportável.
+
+8. Versões
+   - Versão do app, do mandato, do estilo de edição, dos serviços
+     instalados, do modelo usado. Quando cada uma mudou.
+
+9. Ferramentas
+   - Rodar as verificações automáticas agora; rodar uma rodada de teste
+     (não vai para a saída); reprocessar um vídeo; refazer a indexação de
+     uma pasta; testar cada serviço.
+   - Exportar todos os logs do perfil: gera um único arquivo com a linha
+     do tempo, rodadas, estado dos serviços, resultados de testes,
+     memória (sem chaves) e versões, no período escolhido, para suporte
+     ou para colar numa conversa com o Claude e pedir diagnóstico.
+
+Regras:
+- Logs ficam na pasta do perfil, em arquivos por dia, com retenção
+  configurável (padrão: 90 dias de detalhe; resumos ficam para sempre).
+- Nada sensível em texto puro: chaves de API nunca aparecem nos logs.
+- A tela nunca é obrigatória para usar o app; é para quando algo deu
+  errado ou o usuário quer entender o que o agente fez.
+- Alertas importantes (serviço caído, rodada falhou, custo perto do
+  teto, verificação falhando repetidamente) aparecem também fora dela:
+  na lista de perfis, na aba Técnico e na tela do relatório, com link
+  para a entrada correspondente.
 
 ---
 
@@ -514,14 +617,15 @@ conversa com o agente; relatório semanal; custo; configurações globais
 Feito com o usuário, amplo e profundo, base de aprendizados.md e
 tendencias.md. Mesma amplitude da seção 8.3, mais:
 - Teste e ranking das vozes gratuitas por idioma; teste da voz clonada.
-- Padrões de escrita que denunciam IA, por idioma.
+- Padrões de escrita que denunciam IA, por idioma (alimenta o detector
+  da seção 14.2).
 - Verificação de que a obtenção de sons (yt-dlp) funciona; plano B.
 - Teste dos métodos de geração no PC do usuário: o que roda, com que
   qualidade e em quanto tempo.
 - Estudo de quais formatos gerados funcionam no nicho hoje e por quê, sem
   assumir nenhum de antemão.
-- Teste do mandato na prática: verificar se produz o comportamento
-  esperado e ajustar o que não estiver produzindo.
+- Bateria completa de testes do agente (seção 14.1), com 10 a 20 vídeos
+  de teste, antes do primeiro post real.
 - Padrões de partida a validar: gancho nos primeiros 1-2s; cortar tempo
   morto; legenda grande palavra por palavra; zoom em momentos-chave; final
   em loop; humor em 15-45s; capa com frame forte do próprio vídeo.
@@ -532,8 +636,9 @@ tendencias.md. Mesma amplitude da seção 8.3, mais:
 v1: seções 2 a 7; mandato; geração por código e híbridos; imagens por IA
 se houver GPU; métricas (8.1); experimentos (8.2); edições do usuário como
 aprendizado; curva de retenção; revisor independente com critério "parece
-genérico/máquina"; relatório semanal; anti-alucinação; conversa com o
-agente; configurações completas; estudo inicial; voz do usuário.
+genérico/máquina"; verificações automáticas e manuais (14); relatório
+semanal; anti-alucinação; conversa com o agente; configurações completas;
+tela Bastidores; estudo inicial; voz do usuário.
 v2: índice de momentos; catálogo de ganchos; comentários como pauta;
 contas acompanhadas; vídeo por modelo de IA (quando o usuário habilitar);
 adaptadores para outras plataformas. Versionamento de estilo entra na v1
@@ -557,18 +662,115 @@ semanas, com versão mínima, e aprender com posts reais enquanto o resto é
 construído. Um sistema que postou 30 vídeos vale mais que um perfeito que
 nunca postou.
 1. Perguntas da seção 12. Estrutura do projeto, pasta de perfil, SQLite,
-   mandato.md.
+   mandato.md, logs desde o início.
 2. Versão mínima ponta a ponta: um vídeo, um post.md, postar de verdade.
 3. Indexação completa, testada em pasta pequena.
-4. Estudo inicial (seção 10).
+4. Estudo inicial (seção 10), incluindo a bateria de testes do agente.
 5. Perfis, onboarding, arquivos de memória, preferências, voz do usuário.
 6. Rotina diária de tendências, edição e estratégia.
 7. Motor de edição completo: plano JSON → ffmpeg; legendas; narração;
    batidas; geração por código.
-8. Revisor independente e padrão mínimo de transformação.
+8. Revisor independente, padrão mínimo de transformação e verificações
+   automáticas.
 9. Pacote de publicação e tela de revisão com edição direta.
-10. Métricas, curva de retenção, experimentos, relatório, lembrete.
+10. Métricas, curva de retenção, experimentos, relatório, lembrete,
+    verificações manuais.
 11. Conversa com o agente e destilação de preferências.
 12. Custo e teto.
 13. Rodada automática (Agendador de Tarefas / cron).
-14. Interface completa, com o usuário.
+14. Tela Bastidores e aba Técnico.
+15. Interface completa, com o usuário.
+
+---
+
+## 14. Testes do agente
+
+Dois riscos a testar continuamente: o agente não se comportar como o
+mandato descreve, e o agente se dispersar (fazer de tudo sem ficar
+excelente em nada). Testes mistos: a IA verifica o que é objetivo, o
+usuário verifica o que é gosto. Nenhum dos dois sozinho é suficiente.
+
+### 14.1 Quando
+- No estudo inicial, antes do primeiro post real: bateria completa.
+- A cada rodada: as verificações automáticas rodam sempre.
+- Toda semana, junto com o relatório: resumo dos resultados e o painel de
+  dispersão.
+- Após qualquer mudança no mandato, no modelo ou numa versão de estilo:
+  bateria completa de novo.
+
+### 14.2 Verificações automáticas (por uma chamada à IA que não é o
+agente, a cada rodada)
+Comportamento conforme o mandato:
+- Todo post tem motivo registrado para formato, fonte de material, gancho,
+  som e voz. Post sem motivo é falha.
+- O raciocínio das cinco perguntas (3.1) aparece no registro, com conteúdo
+  específico, não frase genérica repetida.
+- Toda afirmação em tendencias.md tem fonte e data; toda conclusão em
+  aprendizados.md tem quantidade de posts e nível de confiança.
+- Nenhum vídeo ou momento repetido (hash). Nenhum som indicado que não foi
+  localizado. Nenhuma trend citada com fonte mais velha que o limite do
+  perfil.
+- Texto: detector de padrões que denunciam IA (lista do estudo inicial,
+  por idioma). Gancho genérico é falha.
+- Padrão mínimo de transformação atendido.
+Dispersão (painel semanal):
+- Distribuição de formatos, fontes de material, vozes e estilos nas
+  últimas N rodadas. Alerta se um formato passa de 60% (monotonia) ou se
+  nenhum chega a 25% (dispersão) depois das primeiras semanas; limites
+  ajustáveis em testes.md.
+- Proporção real explorar/explorar versus a configurada.
+- Hipóteses: abertas, fechadas com conclusão, abandonadas sem conclusão.
+  Abandono alto é dispersão.
+- Custo e tempo por post por fonte de material: alerta se geração custa
+  muito mais que biblioteca sem entregar métrica melhor.
+- Afunilamento: a cada semana, o agente deve dizer em uma frase o que esta
+  conta faz de excepcional. Se a frase muda toda semana ou não existe, o
+  afunilamento não está funcionando.
+
+### 14.3 Verificações manuais (pelo usuário)
+No estudo inicial, com 10 a 20 vídeos de teste, e depois toda semana com
+amostra de 3 a 5 posts, apresentada pelo agente na tela do relatório:
+- "Eu postaria isso?" (sim/não, com uma frase). O teste mais importante.
+- "Parece feito por máquina?" (sim/não, o que denuncia).
+- "A escolha de formato e fonte faz sentido para esta conta?" (sim/não).
+- "O gancho me faria parar?" (sim/não).
+- "Os motivos registrados são de verdade ou são conversa?" Ler o registro
+  de um post e julgar.
+- Comparação cega: dois vídeos do mesmo material, um do agente e um que o
+  usuário editaria à mão (ou uma referência do nicho). Qual é melhor e por
+  quê. Umas 3 vezes no começo, depois uma por mês.
+Respostas ficam registradas e entram como aprendizado (8.2), com peso
+alto. Não travam nada se ficarem sem resposta; ficam pendentes.
+
+### 14.4 Critério de aprovação
+- Estudo inicial: só liberar o primeiro post real quando pelo menos 7 de
+  10 vídeos de teste passarem no "eu postaria isso?" e nenhuma verificação
+  automática de mandato estiver falhando de forma repetida.
+- Semanal: falha automática repetida em três rodadas seguidas, ou "eu
+  postaria isso?" abaixo de 60% na amostra, aciona revisão.
+
+### 14.5 Quando falha
+- Falha de mandato (sem motivo, sem fonte, conclusão apressada): primeiro
+  ajustar o método (como o mandato é apresentado ao modelo, ordem,
+  exemplos), não o mandato em si. Só mudar o texto do mandato se o
+  problema persistir e for de entendimento.
+- Falha de gosto (vídeos corretos que o usuário não postaria): o usuário
+  explica na conversa o que falta; vira preferência e vira hipótese.
+- Dispersão: reduzir a exploração temporariamente, fechar hipóteses
+  abertas antes de abrir novas, pedir ao agente a frase de afunilamento.
+- Monotonia: o inverso; aumentar exploração e revisar se aprendizados.md
+  está travando o agente num formato cedo demais.
+- Toda falha e correção fica registrada com data, para ver se o agente
+  melhora com o tempo ou se o mesmo problema volta.
+
+### 14.6 Execução e armazenamento
+- Verificações automáticas rodam em toda rodada, após o revisor e antes do
+  pacote, sem ação do usuário. Falha em vídeo específico devolve o vídeo
+  ao agente para refazer; falha repetida gera alerta. Painel de dispersão
+  calculado semanalmente.
+- Verificações manuais são apresentadas pelo agente na tela do relatório
+  semanal, com a amostra já separada.
+- Resultados: no banco do perfil, ligados a cada post.
+- Regras: testes.md na pasta do perfil, editável pelo usuário.
+- Interface: seção "Saúde do agente" da tela Bastidores (9.5). Alertas
+  também na lista de perfis, na aba Técnico e na tela do relatório.
