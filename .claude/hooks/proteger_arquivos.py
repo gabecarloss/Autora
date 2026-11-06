@@ -19,7 +19,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _comum import ESCRITOR_DE_TESTES, RAIZ, agente_da_entrada, decidir, ler_entrada
 
-FONTES_DA_VERDADE: Final = frozenset({"briefing.md", "mandato.md"})
+FONTES_DA_VERDADE: Final = frozenset({"BRIEFING.md", "mandato.md"})
+_FONTES_MINUSCULAS: Final = frozenset(nome.lower() for nome in FONTES_DA_VERDADE)
 
 PADROES_SEGREDO: Final[tuple[tuple[str, re.Pattern[str]], ...]] = (
     ("uma chave ou token da Anthropic", re.compile(r"sk-ant-[a-z]+\d*-[A-Za-z0-9_\-]{80,}")),
@@ -80,7 +81,7 @@ def avaliar(
                 )
     caminho = str(entrada_ferramenta.get("file_path") or "")
     nome_arquivo = Path(caminho.replace("\\", "/")).name
-    if nome_arquivo.lower() in FONTES_DA_VERDADE:
+    if nome_arquivo.lower() in _FONTES_MINUSCULAS:
         return (
             "ask",
             f"{nome_arquivo} é fonte da verdade do projeto (CLAUDE.md). Só altere com "

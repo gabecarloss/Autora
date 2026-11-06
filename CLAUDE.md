@@ -5,6 +5,31 @@ para TikTok (e outras redes no futuro). Cada perfil opera uma conta, estuda
 tendências diariamente, edita, gera material próprio quando necessário, e
 aprende com métricas e com o usuário.
 
+## Quem é quem (leia primeiro)
+
+Há três Claudes neste projeto:
+1. O Claude do planejamento: a conversa que gerou o BRIEFING.md. Acabou.
+2. Você, o Claude Code: o DESENVOLVEDOR. Você escreve o software. Não é o
+   agente de nenhum perfil, não cria conteúdo, não decide ganchos, não
+   estuda tendências para postar. O mandato da seção 3.1 do briefing NÃO
+   é sobre você; quando o briefing diz "você" ali, está falando com o
+   agente do perfil.
+3. O agente do perfil: um componente DENTRO do software. É uma chamada ao
+   modelo que o software faz, com o mandato.md do perfil como base do
+   system prompt mais a memória do perfil. Cada perfil tem o seu. O
+   briefing descreve o comportamento DELE. Você o implementa como código.
+
+Regras que decorrem disso:
+- Nenhum vídeo é produzido sem passar pelo agente do perfil. Um script
+  que escolhe um clipe e põe legenda, sem chamada ao modelo com o
+  mandato, não é versão mínima do produto; é só tubulação.
+- Se você se pegar decidindo conceito, gancho ou formato de um vídeo,
+  pare: isso é trabalho do agente. O caminho certo é implementar a
+  chamada que o faz decidir.
+- Ferramental de desenvolvimento (subagentes, skills, hooks, CI) só
+  cresce quando uma necessidade real aparecer no produto. O produto vem
+  antes do processo.
+
 ## Antes de qualquer tarefa
 
 Leia `BRIEFING.md` por inteiro. Ele define o projeto, as decisões já
@@ -28,8 +53,14 @@ usuário e não deve ser reinterpretado.
   dependem de algo caro ou externo (agente real, rede), use um marcador
   (`@pytest.mark.agente`) em vez de deixar sem teste.
 - Decisões não cobertas pelo briefing: pergunte ao usuário. Não assuma.
-- Siga a ordem de construção da seção 13. O passo 2 (versão mínima com um
-  vídeo real postado) vem antes de qualquer sofisticação.
+- Siga a ordem de construção da seção 13. O passo 2 vem antes de qualquer
+  sofisticação, e só está concluído quando: um vídeo real passou pelo
+  agente do perfil com o mandato carregado; o agente decidiu conceito,
+  formato e gancho com motivo registrado; o padrão mínimo de
+  transformação (dois elementos autorais verificáveis) foi cumprido; o
+  plano de edição em JSON foi executado pelo motor ffmpeg com legendas
+  sincronizadas pelo Whisper; e saiu o pacote completo (video.mp4,
+  post.md, capa.jpg). "Um mp4 saiu" não é critério.
 - O mandato (seção 3.1) é a base de toda chamada ao modelo feita pelo
   sistema. Nunca o encurte nem o parafraseie no código; carregue o arquivo
   `mandato.md` do perfil.
@@ -187,9 +218,12 @@ promoção pelo Actions e release (memória `ideia-futura-producao`).
 - Máquina: Windows 10, i9-9900K, 16 GB RAM, RTX 2080 Ti 11 GB. O Whisper
   vê a GPU; o ffmpeg tem libx264 e h264_nvenc.
 - Primeiro perfil: humor, em português.
-- Agente: assinatura Claude (Max quando o sistema estiver pronto),
-  conectada **dentro do app** (Configurações globais → Agente). A chave da
-  API é a alternativa, obrigatória se o produto for vendido.
+- Agente: conexão pela assinatura Claude do usuário, feita dentro do app
+  (Configurações globais → Agente). É o caminho principal, inclusive
+  para o produto. A chave da API pelo SDK `anthropic` fica como
+  alternativa opcional no mesmo lugar, para quem preferir. Trocar de
+  provedor não pode exigir mudança fora do módulo `agente/`, e os testes
+  com agente simulado cobrem os dois. (Decisão do usuário em 06/11/2026.)
 - Teto de custo: configurável no app. O padrão sai da medição de consumo
   no passo 2.
 - Vídeo por modelo pago: desligado.

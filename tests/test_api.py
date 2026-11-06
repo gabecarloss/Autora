@@ -87,6 +87,23 @@ def test_conectar_nunca_devolve_nem_grava_o_segredo(
             assert TOKEN.encode() not in arq.read_bytes(), arq
 
 
+def test_conectar_assinatura_pela_rota(
+    cliente: TestClient, dados: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    exe = tmp_path / "claude.exe"
+    exe.write_text("")
+    monkeypatch.setattr(conexao, "localizar_claude", lambda: exe)
+    monkeypatch.setattr(conexao, "ProvedorAssinatura", lambda exe, tok, pasta: ProvedorFalso())
+    r = cliente.post("/api/agente/conectar/assinatura", json={"token": TOKEN}, headers=_h())
+    assert r.status_code == 200 and r.json()["ok"] is True
+    assert TOKEN not in r.text
+    estado = cliente.get("/api/agente", headers=_h())
+    assert estado.json()["tipo"] == "assinatura"
+    assert TOKEN not in estado.text
+    assert segredos.obter("agente_token_assinatura") == TOKEN
+    assert segredos.obter("agente_chave_api") is None
+
+
 def test_conexao_que_falha_no_teste_nao_e_guardada(
     cliente: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:

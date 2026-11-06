@@ -61,6 +61,9 @@ test("barra lateral tem os itens do briefing e mostra o estado do sistema", asyn
 test("configurações globais mostram a conexão do agente", async () => {
   montar("/configuracoes");
   expect(await screen.findByText(/ainda não está conectado/)).toBeInTheDocument();
+  // A assinatura é o caminho principal (decisão de 06/11/2026): vem marcada por padrão.
+  expect(screen.getByRole("radio", { name: /Assinatura Claude/ })).toBeChecked();
+  expect(screen.getByRole("radio", { name: /Chave de acesso/ })).not.toBeChecked();
   expect(screen.getByLabelText("Código de acesso da assinatura")).toHaveAttribute(
     "type",
     "password",

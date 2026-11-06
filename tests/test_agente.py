@@ -4,9 +4,14 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
+from typing import Any
 
+import anthropic
+import httpx
 import pytest
 
+from autora.agente.claude_api import ProvedorChave, calcular_custo
 from autora.agente.claude_assinatura import ambiente_isolado, interpretar_saida, montar_argumentos
 from autora.agente.contexto import dados_externos, montar_sistema
 from autora.agente.provedor import (
@@ -15,6 +20,7 @@ from autora.agente.provedor import (
     LimiteDeUso,
     Pedido,
     Resposta,
+    RespostaInvalida,
     chamar_registrando,
 )
 from autora.perfil.perfil import Perfil
@@ -176,3 +182,138 @@ def test_cadeia_cai_para_reserva(tmp_path: Path) -> None:
 
     with pytest.raises(TodosFalharam):
         executar_com_reserva("voz", [Opcao("a", "principal", falha)], reg)
+
+
+# --- provedor por chave da API (SDK anthropic simulado) -------------------------
+class _Bloco:
+    type = "text"
+
+    def __init__(self, text: str) -> None:
+        self.text = text
+
+
+class _Uso:
+    def __init__(self, pesquisas: int = 0) -> None:
+        self.input_tokens = 100
+        self.cache_creation_input_tokens = 20
+        self.cache_read_input_tokens = 300
+        self.output_tokens = 40
+        self.server_tool_use = SimpleNamespace(web_search_requests=pesquisas)
+
+
+class _RespostaApi:
+    def __init__(self, texto: str, modelo: str, stop_reason: str = "end_turn") -> None:
+        self.content = [_Bloco(texto)]
+        self.usage = _Uso()
+        self.model = modelo
+        self.stop_reason = stop_reason
+        self.stop_details = None
+
+
+class ClienteApiFalso:
+    """Imita `anthropic.Anthropic`: devolve respostas na ordem ou levanta um erro."""
+
+    def __init__(self, respostas: list[_RespostaApi] | None = None, erro: Exception | None = None):
+        self.respostas = list(respostas or [])
+        self.erro = erro
+        self.chamadas: list[tuple[str, dict[str, Any]]] = []
+        self.messages = SimpleNamespace(create=lambda **kw: self._create("messages", **kw))
+        self.beta = SimpleNamespace(
+            messages=SimpleNamespace(create=lambda **kw: self._create("beta", **kw))
+        )
+
+    def _create(self, via: str, **kw: Any) -> _RespostaApi:
+        self.chamadas.append((via, kw))
+        if self.erro:
+            raise self.erro
+        return self.respostas.pop(0)
+
+
+def _instalar_cliente(monkeypatch: pytest.MonkeyPatch, cliente: ClienteApiFalso) -> None:
+    monkeypatch.setattr(anthropic, "Anthropic", lambda **kw: cliente)
+
+
+def _erro_http(classe: type[Exception], status: int, cabecalhos: dict[str, str] | None = None):
+    resposta = httpx.Response(
+        status, headers=cabecalhos, request=httpx.Request("POST", "https://api.exemplo")
+    )
+    return classe("erro", response=resposta, body=None)
+
+
+def test_calcular_custo_usa_tabela_cache_e_pesquisas() -> None:
+    uso = _Uso(pesquisas=2)
+    # Haiku: (100*0.10 + 20*0.10*1.25 + 300*0.01 + 40*0.50) / 1e6 + 2 pesquisas
+    assert calcular_custo("claude-haiku-5-5", uso) == pytest.approx(
+        35.5e-6 + 2 * 10 / 1000, abs=1e-6
+    )
+    assert calcular_custo("modelo-desconhecido", uso) is None
+
+
+def test_provedor_chave_responde_com_dados_e_contabiliza(monkeypatch: pytest.MonkeyPatch) -> None:
+    cliente = ClienteApiFalso([_RespostaApi('{"a": 1}', "claude-haiku-5-5")])
+    _instalar_cliente(monkeypatch, cliente)
+    pedido = _pedido(esquema_json={"type": "object"})
+    r = ProvedorChave("sk-ant-api03-chave-de-teste").chamar(pedido)
+    assert r.dados == {"a": 1}
+    assert (r.tokens_entrada, r.tokens_saida, r.tokens_cache) == (120, 40, 300)
+    assert r.custo_usd == pytest.approx(calcular_custo("claude-haiku-5-5", _Uso()))
+    via, kw = cliente.chamadas[0]
+    assert via == "messages"  # nível rápido: sem fallback de servidor
+    assert kw["system"][0]["text"] == "s" and kw["model"] == "claude-haiku-5-5"
+    assert kw["output_config"]["format"]["type"] == "json_schema"
+    assert "tools" not in kw
+
+
+def test_provedor_chave_usa_fallback_e_ferramentas_de_servidor(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cliente = ClienteApiFalso(
+        [
+            _RespostaApi("", "claude-opus-5-5", stop_reason="pause_turn"),
+            _RespostaApi("ok", "claude-opus-5-5"),
+        ]
+    )
+    _instalar_cliente(monkeypatch, cliente)
+    pedido = _pedido(etapa="conceito", ferramentas=("WebSearch",), nivel="maximo")
+    r = ProvedorChave("sk-ant-api03-chave-de-teste").chamar(pedido)
+    assert r.texto == "ok" and r.tokens_saida == 80  # duas rodadas somadas
+    assert [via for via, _ in cliente.chamadas] == ["beta", "beta"]
+    kw = cliente.chamadas[0][1]
+    assert kw["fallbacks"] == "default"
+    assert kw["tools"] == [{"type": "web_search_20260209", "name": "web_search"}]
+
+
+@pytest.mark.parametrize(
+    ("classe", "status", "cabecalhos", "esperado"),
+    [
+        (anthropic.AuthenticationError, 401, None, AgenteNaoConectado),
+        (anthropic.PermissionDeniedError, 403, None, AgenteNaoConectado),
+        (anthropic.RateLimitError, 429, {"retry-after": "30"}, LimiteDeUso),
+        (anthropic.InternalServerError, 500, None, ErroAgente),
+    ],
+)
+def test_provedor_chave_traduz_erros_do_sdk(
+    monkeypatch: pytest.MonkeyPatch,
+    classe: type[Exception],
+    status: int,
+    cabecalhos: dict[str, str] | None,
+    esperado: type[ErroAgente],
+) -> None:
+    _instalar_cliente(monkeypatch, ClienteApiFalso(erro=_erro_http(classe, status, cabecalhos)))
+    with pytest.raises(esperado) as info:
+        ProvedorChave("sk-ant-api03-chave-de-teste").chamar(_pedido())
+    if esperado is LimiteDeUso:
+        assert info.value.espera_s == 30
+
+
+def test_provedor_chave_recusa_e_resposta_fora_do_formato(monkeypatch: pytest.MonkeyPatch) -> None:
+    _instalar_cliente(
+        monkeypatch, ClienteApiFalso([_RespostaApi("", "claude-haiku-5-5", stop_reason="refusal")])
+    )
+    with pytest.raises(ErroAgente, match="recusou"):
+        ProvedorChave("k").chamar(_pedido())
+    _instalar_cliente(
+        monkeypatch, ClienteApiFalso([_RespostaApi("não é json", "claude-haiku-5-5")])
+    )
+    with pytest.raises(RespostaInvalida):
+        ProvedorChave("k").chamar(_pedido(esquema_json={"type": "object"}))

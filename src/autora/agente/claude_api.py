@@ -1,7 +1,8 @@
 """Conexão por chave da API do Claude, via SDK oficial `anthropic`.
 
-Obrigatória se o produto for vendido (a assinatura é pessoal). A chave vem do
-keyring e só existe em memória durante a chamada.
+Alternativa opcional à assinatura, para quem preferir (decisão do usuário em
+06/11/2026; a assinatura é o caminho principal). A chave vem do keyring e só existe
+em memória durante a chamada.
 
 - Texto de base com cache (economiza nas chamadas seguidas do mesmo perfil).
 - Fallback do lado do servidor (`fallbacks="default"`) ligado nos níveis

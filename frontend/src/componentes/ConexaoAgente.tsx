@@ -136,7 +136,7 @@ export function ConexaoAgente() {
               checked={forma === "assinatura"}
               onChange={() => setForma("assinatura")}
             />
-            Assinatura Claude (Pro ou Max) — recomendado para uso pessoal
+            Assinatura Claude (Pro ou Max) — recomendado
           </label>
           <label className="opcao">
             <input
@@ -145,7 +145,7 @@ export function ConexaoAgente() {
               checked={forma === "chave"}
               onChange={() => setForma("chave")}
             />
-            Chave de acesso da conta de desenvolvedor Claude — cobrada por uso
+            Chave de acesso da conta de desenvolvedor Claude — alternativa, cobrada por uso
           </label>
         </fieldset>
 
