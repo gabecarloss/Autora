@@ -30,11 +30,20 @@ export type ResultadoTeste = {
   custo_usd: number | null;
 };
 
+export type Criacao = {
+  estado: "ocioso" | "criando" | "pronto" | "falhou";
+  mensagem: string | null;
+  pasta_saida: string | null;
+  iniciado_em: string | null;
+  terminado_em: string | null;
+};
+
 export type ResumoPerfil = {
   slug: string;
   nome: string;
   pausado: boolean;
   estado: "ok" | "problema";
+  criacao: Criacao;
 };
 
 export class ErroServidor extends Error {
@@ -89,4 +98,6 @@ export const api = {
   perfis: () => pedir<ResumoPerfil[]>("/api/perfis"),
   criarPerfil: (slug: string, nome: string) =>
     pedir<ResumoPerfil>("/api/perfis", "POST", { slug, nome }),
+  criarAgora: (slug: string) =>
+    pedir<Criacao>(`/api/perfis/${encodeURIComponent(slug)}/criar-agora`, "POST"),
 };

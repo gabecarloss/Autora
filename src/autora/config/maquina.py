@@ -30,6 +30,9 @@ class ConfigMaquina(BaseModel):
     """apelido → caminho absoluto da pasta da biblioteca."""
     saida_por_perfil: dict[str, str] = Field(default_factory=dict)
     """slug → pasta de saída personalizada (opcional; padrão: <dados>/saida/<slug>)."""
+    # PROVISÓRIO (passo 2): modelos do Whisper desta máquina, até medir com vídeo real.
+    whisper_modelo_gpu: str = "large-v3"
+    whisper_modelo_cpu: str = "small"
 
 
 def _caminho(dados: Path | None) -> Path:

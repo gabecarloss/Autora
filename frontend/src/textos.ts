@@ -1,7 +1,7 @@
 // Nomes da interface. Fonte: GLOSSARIO.md (seção 15.5 do briefing).
 // A interface só usa estes nomes; nada de jargão técnico em texto visível.
 
-import type { Etapa, EstadoSistema, Nivel } from "./api";
+import type { Criacao, Etapa, EstadoSistema, Nivel } from "./api";
 
 export const ESTADO_SISTEMA: Record<EstadoSistema["estado"], string> = {
   ligado: "Ligado",
@@ -45,4 +45,13 @@ export const NIVEIS: Record<Nivel, string> = {
   rapido: "Rápido",
   equilibrado: "Equilibrado",
   maximo: "Máximo",
+};
+
+export const CRIAR_AGORA = "Criar agora";
+
+export const CRIACAO: Record<Criacao["estado"], string> = {
+  ocioso: "",
+  criando: "Criando…",
+  pronto: "Pronto",
+  falhou: "Falhou",
 };

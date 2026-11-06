@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
-import { api } from "../api";
+import { api, type ResumoPerfil } from "../api";
+import { CRIACAO, CRIAR_AGORA } from "../textos";
 
 function sugerirNomeInterno(nome: string): string {
   return nome
@@ -12,9 +13,42 @@ function sugerirNomeInterno(nome: string): string {
     .slice(0, 40);
 }
 
+function EstadoCriacao({ criacao }: { criacao: ResumoPerfil["criacao"] }) {
+  if (criacao.estado === "ocioso") return null;
+  const rotulo = CRIACAO[criacao.estado];
+  if (criacao.estado === "pronto") {
+    return (
+      <span className="criacao ok">
+        {" "}
+        · {rotulo}
+        {criacao.pasta_saida ? `: ${criacao.pasta_saida}` : ""}
+      </span>
+    );
+  }
+  if (criacao.estado === "falhou") {
+    return (
+      <span className="criacao alerta">
+        {" "}
+        · {rotulo}
+        {criacao.mensagem ? `: ${criacao.mensagem}` : ""}
+      </span>
+    );
+  }
+  return <span className="criacao"> · {rotulo}</span>;
+}
+
 export function Perfis() {
   const qc = useQueryClient();
-  const perfis = useQuery({ queryKey: ["perfis"], queryFn: api.perfis });
+  const perfis = useQuery({
+    queryKey: ["perfis"],
+    queryFn: api.perfis,
+    refetchInterval: (consulta) =>
+      consulta.state.data?.some((p) => p.criacao.estado === "criando") ? 3000 : false,
+  });
+  const criarAgora = useMutation({
+    mutationFn: (slug: string) => api.criarAgora(slug),
+    onSettled: () => void qc.invalidateQueries({ queryKey: ["perfis"] }),
+  });
   const [nome, setNome] = useState("");
   const criar = useMutation({
     mutationFn: () => api.criarPerfil(sugerirNomeInterno(nome), nome.trim()),
@@ -48,10 +82,25 @@ export function Perfis() {
                 <span className="alerta"> · a configuração deste perfil está com problema</span>
               )}
               {p.pausado && <span> · pausado</span>}
+              {p.estado === "ok" && (
+                <>
+                  {" "}
+                  <button
+                    type="button"
+                    onClick={() => criarAgora.mutate(p.slug)}
+                    disabled={p.criacao.estado === "criando" || criarAgora.isPending}
+                  >
+                    {CRIAR_AGORA}
+                  </button>
+                  <EstadoCriacao criacao={p.criacao} />
+                </>
+              )}
             </li>
           ))}
         </ul>
       )}
+
+      {criarAgora.isError && <p className="alerta">{criarAgora.error.message}</p>}
 
       <form className="cartao" onSubmit={enviar}>
         <h2>Novo perfil</h2>

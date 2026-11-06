@@ -19,6 +19,7 @@ from autora.api.main import criar_app
 from autora.api.seguranca import novo_token
 from autora.backup.backup import backup_diario
 from autora.config.global_config import pasta_dados
+from autora.plataformas.tiktok import registrar_padrao
 from autora.registro.log import registro_global
 
 PORTA_DEV = 8765
@@ -36,6 +37,7 @@ def main() -> None:
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    registrar_padrao()
     dados = pasta_dados()
     reg = registro_global(dados)
     reg.registrar("sistema", "App aberto.")

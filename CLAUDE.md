@@ -118,9 +118,11 @@ Subagentes:
   ler a implementação.
 - Prontos do Claude Code: `Explore` (varreduras), `Plan`, `/code-review`,
   `/simplify`, `/security-review` (usados no `/fechar-passo`).
-- Criar no passo 2: `inspetor-video` (ffprobe + quadros → checagem visual do
-  vídeo) e `analista-logs` (logs JSONL + MCP SQLite → linha do tempo da rodada).
-  No passo 4: `avaliador-agente` (bateria da seção 14).
+- `inspetor-video` (haiku): ffprobe + quadros extraídos → laudo visual de um
+  `video.mp4` (textos e legendas nos instantes do roteiro, enquadramento).
+- `analista-logs` (sonnet, só leitura): logs JSONL + MCP SQLite → linha do tempo de
+  uma rodada, chamadas ao agente com tokens e custo, onde falhou.
+- Criar no passo 4: `avaliador-agente` (bateria da seção 14).
 
 Skills:
 - `/iniciar-passo N` e `/fechar-passo N`: a forma de trabalho acima.
@@ -130,8 +132,9 @@ Skills:
 - `atualizar-dependencias`: Dependabot e auditorias, com espera de 2 semanas.
 - Catálogo de bibliotecas candidatas por passo:
   `.claude/skills/iniciar-passo/bibliotecas.md`.
-- Criar no passo 2: `ffmpeg` (convenções de vídeo), `perfil-de-teste` (perfil com
-  biblioteca sintética na pasta de dados) e `depurar-rodada`.
+- `ffmpeg`: convenções do motor de edição (duas passagens, ASS, caminhos relativos,
+  o que não funciona nesta build). `perfil-de-teste`: perfil com biblioteca sintética
+  na pasta de dados. `depurar-rodada`: onde olhar quando uma criação falha.
 
 Hooks (scripts Python testados em `tests/hooks/`):
 - `proteger_arquivos`: pede confirmação para editar `BRIEFING.md` e `mandato.md`;
@@ -207,8 +210,146 @@ Estas são obrigações, não sugestões.
 
 ## Estado do projeto
 
-**Passo 1 concluído (06/11/2026).** Próximo: **passo 2**, versão mínima
-ponta a ponta (um vídeo, um post.md, postado de verdade).
+**Passo 2 implementado (06/11/2026), aguardando validação com vídeo real.** O núcleo
+está pronto e testado com clipes sintéticos e agente simulado (378 testes): etapas
+`conceito` e `plano` do agente com esquema validado e repetição única, rodada com
+etapas e decisões no banco, motor ffmpeg em duas passagens (cortes, enquadramento,
+velocidade, zoom, textos e legendas por ASS), transcrição Whisper com reserva, post.md
+e capa.jpg do TikTok, CLI `autora gerar` e botão "Criar agora". Próximo passo da
+seção 13 depois de fechar: **3**, indexação.
+
+### Passo 2: pendente para fechar (passagem de bastão para a máquina com GPU)
+
+Esta sessão começa do zero: o que não estiver aqui ou no código, você não sabe. Siga
+na ordem. O critério de conclusão continua o do CLAUDE.md: um vídeo REAL passou pelo
+agente com o mandato, decisão com motivo, dois elementos autorais verificáveis, pacote
+completo, post postado.
+
+**1. Antes de rodar qualquer coisa**
+- Tentativa antiga do passo 2 sem commitar nesta máquina: descarte. Critério: qualquer
+  código que produza vídeo sem chamar o agente com o `mandato.md` (escolhe clipe, põe
+  legenda, monta mp4) é tubulação, não passo 2, e a versão commitada já cobre tudo.
+  Quem roda é o usuário (o hook `guardar_comandos` nega `git clean -f` e `reset --hard`):
+  `git status --porcelain` para ver; opcional `git stash push -u -m "tentativa antiga
+  passo 2"` para guardar uma cópia; depois `git restore --staged --worktree .` (descarta
+  o rastreado) e `git clean -fd` (apaga o não rastreado; sem `-x`, `.venv` e
+  `node_modules` ficam). Só então `git pull`, `uv sync --locked`, `npm ci` em `frontend/`,
+  `uv run poe verificar` (deve ficar verde; testes `ffmpeg` rodam porque há ffmpeg).
+- Pasta de amostra FORA do repositório com 20 a 50 vídeos reais (ex.: `D:\amostra`).
+  Dentro dela, `descricoes.json` com uma linha por clipe para pelo menos 10 deles:
+  `{"nome.mp4": "o que a cena mostra, em uma frase"}` (nome do arquivo ou caminho
+  relativo com `/`). O agente ainda não analisa imagem (passo 3): sem descrição, um
+  clipe sem fala é invisível para ele. Descrição é dado (o que aparece), não decisão
+  criativa.
+- Assinatura conectada no app DESTA máquina: `uv run autora-app` → Configurações
+  globais → Agente → Assinatura Claude (abre `claude setup-token`, cola o código,
+  testa). Sem isso, `autora gerar` para com "O agente ainda não foi conectado".
+- Whisper: na primeira rodada o modelo `large-v3` (~3 GB) é baixado para
+  `%USERPROFILE%\Autora\modelos\whisper` e usado na GPU; se a GPU falhar (cuBLAS/cuDNN
+  ausentes), cai para `small` (~480 MB) na CPU e o log diz "o legendas pelo processador
+  vai assumir". Demora: avise o usuário antes da primeira rodada. Os clipes candidatos
+  (até 8, `LIMITE_CANDIDATOS`) também são transcritos nessa primeira rodada.
+
+**2. Primeiro pacote com vídeo real, nesta ordem**
+```
+uv run autora perfil criar humor --nome "Humor"        # se o perfil ainda não existir
+uv run autora gerar humor --pasta "D:\amostra"         # registra a pasta (apelido em maquina.json,
+                                                        # só o apelido no perfil) e já cria o post
+uv run autora gerar humor                               # rodadas seguintes
+```
+Saída: `%USERPROFILE%\Autora\saida\humor\<AAAA-MM-DD>\<n>\` com `video.mp4`, `post.md`,
+`capa.jpg`, `roteiro.json`. A tela Perfis (botão "Criar agora") faz o mesmo em segundo
+plano; o CLI é mais fácil de acompanhar.
+- Conferir o vídeo: subagente `inspetor-video` com o caminho do `video.mp4` (ele lê o
+  `roteiro.json` da mesma pasta, extrai quadros nos instantes dos textos e dá o laudo).
+- Abrir `post.md` (gancho, alternativas, descrição, hashtags, som "a escolher no app",
+  capa, elementos autorais, motivos, avisos) e `roteiro.json` (`ideia` = resposta do
+  agente na etapa conceito com `raciocinio` das cinco perguntas; `roteiro` = cortes,
+  textos, legendas; `entrega` = duração, estado das legendas, transcrição usada).
+- Conferir que o agente decidiu e registrou, no log e no banco:
+  - log: `%USERPROFILE%\Autora\perfis\humor\logs\<AAAA-MM-DD>.jsonl`; eventos `decisao`
+    (etapa `conceito`: `detalhe.raciocinio`, `gancho`, `elementos_autorais`; etapa
+    `plano`: o roteiro), `servico` ("O agente respondeu." com tokens), `etapa`. O
+    subagente `analista-logs` monta a linha do tempo da rodada.
+  - banco (MCP `autora-sqlite`, só leitura): `listar_perfis()`, depois
+    `consultar("humor", "SELECT campo, escolha, motivo FROM decisao WHERE post_id = 1
+    ORDER BY id")` — precisa ter `formato`, `tema`, `gancho`, `horario`, `capa`, um
+    `clipe` por clipe escolhido, DOIS `elemento_autoral` de tipos distintos, e `ritmo`,
+    `enquadramento`, `textos`, `legendas` do roteiro, todos com `motivo` específico;
+    `consultar("humor", "SELECT etapa, estado, erro FROM etapa_execucao WHERE rodada_id
+    = 1 ORDER BY id")` (estudo, revisor e verificacoes `pulada`; o resto `ok`);
+    `consultar("humor", "SELECT etapa, nivel, modelo, tokens_entrada, tokens_saida,
+    tokens_cache, custo_usd, duracao_ms, resultado FROM chamada_servico")` (uma linha
+    por chamada ao agente; é a medição de consumo do item 5);
+    `consultar("humor", "SELECT estado, gancho, pasta_saida FROM post")`
+    (`aguardando_revisao`, pasta relativa).
+
+**3. Se o vídeo real sair errado (skill `depurar-rodada`)**
+Para olhar os intermediários, rode o motor de novo com a pasta de trabalho mantida:
+```
+uv run python -c "import json,pathlib; from autora.edicao.plano import PlanoEdicao; from autora.edicao.renderizador import renderizar; from autora.plataformas.tiktok import TikTok; from autora.registro.log import Registro; from autora.biblioteca.ficha import caminhos_dos_clipes, fichas_disponiveis; from autora.perfil.perfil import Perfil; from autora.config.global_config import pasta_dados; d=pasta_dados(); p=Perfil.abrir(d,'humor'); r=json.loads(pathlib.Path(r'<pasta do post>/roteiro.json').read_text(encoding='utf-8')); plano=PlanoEdicao.model_validate(r['roteiro']); con=p.conectar().__enter__(); ids={t.clipe_id for t in plano.trechos}; fichas=[f for f in fichas_disponiveis(p,d,con,limite=50) if f.id in ids]; renderizar(plano, caminhos_dos_clipes(fichas,d), pathlib.Path('depuracao'), espec=TikTok.video, registro=Registro(pathlib.Path('depuracao/logs'),'dep'), idioma='pt', pasta_modelos=d/'modelos'/'whisper', manter_trabalho=True)"
+```
+(Clipes já usados não voltam em `fichas_disponiveis`; para reprocessar um post, apague
+as linhas dele em `post_video` ou monte `clipes={id: caminho}` à mão.) `depuracao/trabalho/`
+fica com `filtros_1.txt`, `base.mp4`, `base.wav`, `whisper.wav`, `legendas.ass`, `fontes/`.
+- **Sem legenda**: `post.md` → "Legendas:". "sem fala" com clipe falado: ouça
+  `trabalho/whisper.wav`; confira `idioma_saida` do perfil (`pt-BR` → `pt`) e os eventos
+  `servico` de "legendas" no log. "indisponíveis": as duas opções do Whisper falharam;
+  o log tem o erro (CUDA sem DLL → instale cuBLAS/cuDNN ou aceite `small` na CPU; modelo
+  não baixado → rede). Legenda existe mas não aparece: `legendas.ass` tem eventos?
+  `fontes/` tem os `.ttf`? (fonte ausente usa a padrão e avisa no log.)
+- **Sem áudio**: `inspetor-video` mostra `codec_audio`; `roteiro.json` →
+  `audio.manter_original`; `filtros_1.txt` → se há entrada `anullsrc` para o trecho, a
+  ficha do clipe disse `tem_audio = 0` (confira `SELECT id, caminho_relativo, tem_audio
+  FROM video`); `trabalho/base.wav` mudo = problema na passagem 1 (stderr do ffmpeg
+  está em `detalhe.ffmpeg` do evento `erro` do log, se houve erro).
+- **Texto fora da zona segura**: `roteiro.json` → `textos[].posicao`/`y`;
+  `legendas.ass` → `MarginV` (topo 200/1920 e base 430/1920 da altura, em
+  `src/autora/edicao/legendas.py`, `_ALINHAMENTO`, provisório) e `\pos` dos textos com
+  `y`. Ajuste as frações e re-renderize; registre a mudança como provisório do passo 2.
+- **Duração divergente**: o log tem `erro` "O vídeo final saiu diferente do esperado"
+  com o que divergiu. Compare `roteiro.json` → soma de (fim−início)/velocidade dos
+  trechos com `entrega.duracao_s`; em `filtros_1.txt`, `atrim=end=` e os `-t` dos `-i`.
+  Causas comuns: `fim_s` passando da duração real do clipe (tolerância 0,05 s em
+  `verificar_contra_clipes`), clipe de taxa variável (o `fps=30` normaliza; confira com
+  `ffprobe`), áudio mais curto que o vídeo (o `apad` cobre; se faltou, veja o stderr).
+  Rode a passagem 1 à mão dentro de `trabalho/`: `ffmpeg <args de
+  filtros.argumentos_passagem_1>` (skill `ffmpeg`).
+
+**4. Postar de verdade e só depois fechar**
+Critério para postar: o usuário responde "sim" a "Eu postaria isso?" (seção 14.3);
+`inspetor-video` deu OK; os dois elementos autorais estão VISÍVEIS no vídeo, não só
+declarados; legendas sincronizadas quando há fala; gancho, descrição e hashtags do
+`post.md` sem cara de máquina; capa legível. O usuário posta no TikTok com o som e a
+capa indicados no `post.md` e anota o link no fim do `post.md` (métricas e estado
+`publicado` entram no passo 10). Se não postaria: `uv run autora gerar humor` de novo
+(o agente nunca repete clipe) e registre o motivo na memória; três pacotes seguidos
+reprovados = problema de método (texto da tarefa em `rodada/conceito.py`/`rodada/plano.py`
+ou esquema), não do mandato (seção 14.5).
+Então `/fechar-passo 2`, que inclui: fixar `NIVEL_PADRAO_POR_ETAPA` em
+`src/autora/agente/provedor.py` com o consumo medido (`SELECT etapa, nivel, modelo,
+SUM(tokens_entrada), SUM(tokens_saida), SUM(custo_usd), AVG(duracao_ms) FROM
+chamada_servico GROUP BY etapa, nivel, modelo` em todas as rodadas), decidido com o
+usuário; tirar o "PROVISÓRIO" dali; memória `passo-2-concluido`; "Estado do projeto"
+apontando para o passo 3 (indexação).
+
+**5. O que NÃO fazer nesta sessão**
+Nenhum ferramental novo (subagente, skill, hook, MCP). Nada do passo 3 em diante
+(indexação, hash perceptual, análise por IA dos clipes, estudo diário, revisor,
+verificações, som, narração, tela de revisão) antes do pacote real conferido e
+postado. Nenhuma dependência nova. Nenhuma mudança no `mandato.md`. Mudança no motor
+só para corrigir o que o vídeo real mostrar, com teste. Nenhum commit sem o usuário
+pedir.
+
+Decisões do passo 2 (06/11/2026): sem narração (edge-tts fica no passo 7); disparo
+por CLI e botão mínimo (sem tela de revisão, passo 9); testes com agente real usam a
+conexão feita no app. Provisórios do passo 2 estão marcados "PROVISÓRIO" no código:
+limites desta versão na mensagem do agente, tipos de elemento autoral e a checagem por
+código do padrão mínimo (até o revisor do passo 8), `LIMITE_CANDIDATOS` e
+`descricoes.json` (até a indexação do passo 3), modelos Whisper `large-v3`/`small` em
+`maquina.json`, fontes do Windows, limites de duração/zona segura, níveis por etapa até
+medir o consumo, sem few-shot, lista de ganchos genéricos do teste real, etapas
+`estudo`/`revisor`/`verificacoes` puladas, testes `ffmpeg` pulando no CI.
 
 Ferramentas do Claude Code (subagentes, skills, hooks, MCP, poe) montadas em
 06/11/2026, fora da ordem da seção 13. Adiado pelo usuário: branch `production`,
@@ -245,9 +386,11 @@ Tarefas em `[tool.poe.tasks]` do `pyproject.toml` (equivalente aos scripts do
 npm); `uv run poe` lista todas. CI, pre-commit e `verificador` usam as mesmas.
 - Abrir o app: `uv run autora-app` (desenvolvimento: `uv run poe dev`
   + `npm run dev` em `frontend/`).
-- CLI: `uv run autora perfil criar|listar`, `uv run autora backup`.
-- Testes: `uv run poe testar` (agente simulado, com cobertura);
-  `uv run poe testar-agente` (agente real).
+- CLI: `uv run autora perfil criar|listar`, `uv run autora backup`,
+  `uv run autora gerar <perfil> [--pasta <vídeos>] [--teste]` (cria um post agora).
+- Testes: `uv run poe testar` (agente simulado, com cobertura; testes `ffmpeg` pulam
+  sem ffmpeg); `uv run poe testar-agente` (agente real, inclui rodada completa com
+  Whisper); `uv run poe testar-whisper` (transcrição real, baixa o modelo).
 - Checagens: `uv run poe lint` (ruff, mypy, camadas, dependências) ·
   `uv run poe front` · `uv run poe auditar` · `uv run poe formatar`.
 - Tudo de uma vez: `uv run poe verificar` ou o subagente `verificador`.
@@ -258,9 +401,19 @@ npm); `uv run poe` lista todas. CI, pre-commit e `verificador` usam as mesmas.
   portátil, esquema único do onboarding e das configurações, memória com
   histórico, exportar/importar) · `db/` (conexão e migrações) · `registro/`
   (logs JSONL com máscara de segredos) · `backup/` · `agente/` (provedores,
-  contexto, conexão pelo app) · `servicos/cadeia.py` (principal → reserva) ·
-  `plataformas/` (interface genérica; `tiktok/` vazio até o passo 2) ·
-  `api/` (servidor local) · `rodada/`, `edicao/`, `biblioteca/` (vazios).
+  contexto, conexão pelo app) · `servicos/` (`cadeia.py` principal → reserva;
+  `transcricao.py` Whisper GPU → CPU) · `plataformas/` (interface genérica;
+  `tiktok/` com especificação do vídeo e `post_md.py`) · `api/` (servidor local;
+  rota "criar agora") · `rodada/` (`executar.py` a rodada; `conceito.py` e `plano.py`
+  as duas chamadas ao agente; `chamada.py` chamada com esquema e repetição única;
+  `esquemas.py` o que o agente devolve na ideia; `transformacao.py` padrão mínimo;
+  `pacote.py` pasta de saída; `estado.py` criação em segundo plano) · `edicao/`
+  (`plano.py` roteiro de edição; `filtros.py` → ffmpeg; `legendas.py` → ASS;
+  `renderizador.py` duas passagens; `capa.py`; `ffmpeg.py` sondagem; `fontes.py`;
+  `sintetico.py` clipes de teste) · `biblioteca/ficha.py` (ficha dos clipes,
+  tabela `video`, clipes usados nunca voltam).
+- Saída: `<dados>/saida/<perfil>/<data>/<n>/` com `video.mp4`, `post.md`, `capa.jpg`,
+  `roteiro.json`.
 - `frontend/`: barra lateral, Perfis (mínimo), Configurações globais
   (agente, nível por etapa, modo de criação).
 - `ferramentas/`: só desenvolvimento (servidor MCP de leitura, tarefas do poe).

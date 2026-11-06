@@ -38,6 +38,18 @@ class PacotePost:
     versao_estilo: int | None
     motivos: dict[str, str] = field(default_factory=dict)
     som: dict[str, object] | None = None
+    # Campos do passo 2 (genéricos; o adaptador decide como mostrar).
+    tema: str = ""
+    conceito: str = ""
+    duracao_s: float | None = None
+    legendas: str = "ok"  # "ok" | "sem_fala" | "indisponiveis" | "desligadas"
+    elementos_autorais: list[dict[str, str]] = field(default_factory=list)
+    referencia: str | None = None  # se adaptação (seção 6)
+    nao_sei: list[str] = field(default_factory=list)
+    confianca: str | None = None
+    avisos: list[str] = field(default_factory=list)
+    nome_perfil: str = ""
+    criado_em: str = ""
 
 
 class Plataforma(Protocol):

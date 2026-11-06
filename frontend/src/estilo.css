@@ -254,3 +254,21 @@ button.perigo {
 .lista-perfis {
   padding-left: 18px;
 }
+
+.lista-perfis li {
+  margin-bottom: 8px;
+}
+
+.lista-perfis button {
+  margin-left: 8px;
+  font-size: 0.9rem;
+  padding: 4px 10px;
+}
+
+.criacao {
+  color: var(--suave);
+}
+
+.criacao.ok {
+  color: var(--ok);
+}

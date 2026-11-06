@@ -12,10 +12,13 @@ Legenda: (B) citada no briefing · (D) só desenvolvimento/testes.
   (ferramentas do Claude Code).
 
 ## Passo 2: versão mínima ponta a ponta
-- (B) `edge-tts`: voz principal (seção 7.3).
-- `tenacity`: nova tentativa com espera antes de cair para o reserva em
-  `servicos/cadeia.py` (ex.: edge-tts sem limite publicado, seção 7.3).
-- (D) `syrupy`: teste de snapshot do `post.md` e da lista de argumentos do ffmpeg.
+Nenhuma dependência nova adotada (06/11/2026): `faster-whisper` e `pillow`, já
+declaradas, passaram a ser usadas.
+- (B) `edge-tts`: **adiada para o passo 7** (decisão do usuário em 06/11/2026: sem
+  narração no passo 2).
+- `tenacity`: **não adotada** no passo 2; reavaliar com edge-tts no passo 7.
+- (D) `syrupy`: **descartada**; o snapshot do `post.md` é um arquivo esperado em
+  `tests/esperado/`, sem dependência.
 
 ## Passo 3: indexação
 - `scenedetect` (PySceneDetect): cortes de cena.

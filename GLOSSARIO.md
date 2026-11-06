@@ -41,6 +41,11 @@ Status: **proposta**. Os nomes marcados com (?) aguardam a confirmação do usu�
 | verificações automáticas | Checagens |
 | verificações manuais | Suas avaliações (?) |
 | pacote de publicação | post pronto (?) |
+| gerar agora / criação em segundo plano (estados ocioso, criando, pronto, falhou) | Criar agora · Criando… / Pronto / Falhou |
+| ficha do clipe (metadados + transcrição + descrição) | (interno; não aparece na interface) |
+| elementos autorais (padrão mínimo de transformação) | Elementos autorais (no post.md) |
+| roteiro.json (ideia + roteiro + transcrição, na pasta do post) | (arquivo de apoio; só na pasta de saída) |
+| transcrição / serviço de legenda (Whisper, GPU → CPU) | legendas · "legendas pela placa de vídeo" / "legendas pelo processador" |
 | tela de revisão | Revisão do lote |
 | indexação | Organização da biblioteca |
 | índice de momentos | Melhores momentos |

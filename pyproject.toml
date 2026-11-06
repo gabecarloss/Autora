@@ -86,6 +86,10 @@ fail_under = 75
 help = "Testes de integração com o agente real (gasta uso da assinatura)"
 cmd = "pytest -m agente"
 
+[tool.poe.tasks.testar-whisper]
+help = "Transcrição real com o Whisper (baixa o modelo na primeira vez)"
+cmd = "pytest -m whisper"
+
 [tool.poe.tasks.ruff]
 help = "Lint e formato do Python (só confere)"
 sequence = [
@@ -183,17 +187,20 @@ known_first_party = ["autora"]
 extend_exclude = ["ferramentas", "\\.claude", "frontend"]
 
 [tool.deptry.per_rule_ignores]
-# PROVISÓRIO: declaradas no passo 1, passam a ser usadas no passo 2 (legendas) e no
-# passo 3 (indexação). Remover daqui quando forem importadas.
-DEP002 = ["faster-whisper", "imagehash", "pillow"]
+# PROVISÓRIO: declarada no passo 1, passa a ser usada no passo 3 (indexação).
+DEP002 = ["imagehash"]
+# ctranslate2 vem com o faster-whisper; só é importado para saber se há GPU utilizável.
+DEP003 = ["ctranslate2"]
 
 [[tool.mypy.overrides]]
-module = ["webview", "webview.*", "keyring", "keyring.*", "imagehash", "faster_whisper"]
+module = ["webview", "webview.*", "keyring", "keyring.*", "imagehash", "faster_whisper", "ctranslate2"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-m 'not agente'"
+addopts = "-m 'not agente and not whisper'"
 markers = [
     "agente: testes de integração que chamam o agente real (rodar com -m agente)",
+    "ffmpeg: precisa do ffmpeg instalado (pula se ausente)",
+    "whisper: transcrição real com o Whisper (pesado; rodar com -m whisper)",
 ]
