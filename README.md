@@ -47,5 +47,20 @@ cd frontend; npm test; npm run lint
 
 ## Dados
 
-Os dados ficam fora do repositório, em `%USERPROFILE%\Autora` (ou na pasta da
-variável `AUTORA_DADOS`). Segredos ficam só no Cofre de Credenciais do Windows.
+Os dados (perfis, cópias de segurança, posts prontos) ficam fora do repositório.
+Padrão: `%USERPROFILE%\Autora`. Para usar outra pasta, defina a variável de ambiente
+`AUTORA_DADOS` em cada máquina antes de abrir o app.
+
+Convenção usada pelo usuário: uma pasta-mãe com o repositório e, ao lado dele, a pasta
+de dados; `AUTORA_DADOS` aponta para esta última.
+
+```
+C:\...\Autora\          pasta-mãe
+├── Autora\             repositório (este)
+└── dados\              AUTORA_DADOS
+```
+
+A tela **Configurações globais** mostra qual pasta está em uso e de onde veio (variável
+ou padrão). Nenhum caminho fixo de máquina entra no código nem em perfil: perfis são
+portáteis e guardam só apelidos de pasta. Segredos ficam só no Cofre de Credenciais do
+Windows.

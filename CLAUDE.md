@@ -211,7 +211,7 @@ Estas são obrigações, não sugestões.
 ## Estado do projeto
 
 **Passo 2 implementado (06/11/2026), aguardando validação com vídeo real.** O núcleo
-está pronto e testado com clipes sintéticos e agente simulado (378 testes): etapas
+está pronto e testado com clipes sintéticos e agente simulado (400 testes): etapas
 `conceito` e `plano` do agente com esquema validado e repetição única, rodada com
 etapas e decisões no banco, motor ffmpeg em duas passagens (cortes, enquadramento,
 velocidade, zoom, textos e legendas por ASS), transcrição Whisper com reserva, post.md
@@ -226,15 +226,18 @@ agente com o mandato, decisão com motivo, dois elementos autorais verificáveis
 completo, post postado.
 
 **1. Antes de rodar qualquer coisa**
-- Tentativa antiga do passo 2 sem commitar nesta máquina: descarte. Critério: qualquer
-  código que produza vídeo sem chamar o agente com o `mandato.md` (escolhe clipe, põe
-  legenda, monta mp4) é tubulação, não passo 2, e a versão commitada já cobre tudo.
-  Quem roda é o usuário (o hook `guardar_comandos` nega `git clean -f` e `reset --hard`):
-  `git status --porcelain` para ver; opcional `git stash push -u -m "tentativa antiga
-  passo 2"` para guardar uma cópia; depois `git restore --staged --worktree .` (descarta
-  o rastreado) e `git clean -fd` (apaga o não rastreado; sem `-x`, `.venv` e
-  `node_modules` ficam). Só então `git pull`, `uv sync --locked`, `npm ci` em `frontend/`,
-  `uv run poe verificar` (deve ficar verde; testes `ffmpeg` rodam porque há ffmpeg).
+- Pendentes sem commitar na outra máquina (tentativa antiga do passo 2 e qualquer
+  outra alteração local): descarte por inteiro. As decisões que havia neles (nomes do
+  glossário, retenção de 30 dias, pasta de dados) já estão neste commit, e código que
+  produz vídeo sem chamar o agente com o `mandato.md` é tubulação, não passo 2. Quem
+  roda é o usuário (o hook `guardar_comandos` nega `git clean -f` e `reset --hard`):
+  `git status --porcelain` para ver; opcional `git stash push -u -m "pendentes antigos"`
+  só como cópia; depois `git restore --staged --worktree .` (descarta o rastreado) e
+  `git clean -fd` (apaga o não rastreado; sem `-x`, `.venv` e `node_modules` ficam). Só
+  então `git pull`, `uv sync --locked`, `npm ci` em `frontend/`, `uv run poe verificar`
+  (deve ficar verde; testes `ffmpeg` rodam porque há ffmpeg). Se a pasta de dados dessa
+  máquina ficar ao lado do repositório, defina `AUTORA_DADOS` antes de abrir o app ou a
+  CLI (a tela Configurações globais mostra qual pasta está em uso).
 - Pasta de amostra FORA do repositório com 20 a 50 vídeos reais (ex.: `D:\amostra`).
   Dentro dela, `descricoes.json` com uma linha por clipe para pelo menos 10 deles:
   `{"nome.mp4": "o que a cena mostra, em uma frase"}` (nome do arquivo ou caminho
@@ -245,7 +248,7 @@ completo, post postado.
   globais → Agente → Assinatura Claude (abre `claude setup-token`, cola o código,
   testa). Sem isso, `autora gerar` para com "O agente ainda não foi conectado".
 - Whisper: na primeira rodada o modelo `large-v3` (~3 GB) é baixado para
-  `%USERPROFILE%\Autora\modelos\whisper` e usado na GPU; se a GPU falhar (cuBLAS/cuDNN
+  `<dados>\modelos\whisper` e usado na GPU; se a GPU falhar (cuBLAS/cuDNN
   ausentes), cai para `small` (~480 MB) na CPU e o log diz "o legendas pelo processador
   vai assumir". Demora: avise o usuário antes da primeira rodada. Os clipes candidatos
   (até 8, `LIMITE_CANDIDATOS`) também são transcritos nessa primeira rodada.
@@ -257,7 +260,7 @@ uv run autora gerar humor --pasta "D:\amostra"         # registra a pasta (apeli
                                                         # só o apelido no perfil) e já cria o post
 uv run autora gerar humor                               # rodadas seguintes
 ```
-Saída: `%USERPROFILE%\Autora\saida\humor\<AAAA-MM-DD>\<n>\` com `video.mp4`, `post.md`,
+Saída: `<dados>\saida\humor\<AAAA-MM-DD>\<n>\` com `video.mp4`, `post.md`,
 `capa.jpg`, `roteiro.json`. A tela Perfis (botão "Criar agora") faz o mesmo em segundo
 plano; o CLI é mais fácil de acompanhar.
 - Conferir o vídeo: subagente `inspetor-video` com o caminho do `video.mp4` (ele lê o
@@ -267,7 +270,7 @@ plano; o CLI é mais fácil de acompanhar.
   agente na etapa conceito com `raciocinio` das cinco perguntas; `roteiro` = cortes,
   textos, legendas; `entrega` = duração, estado das legendas, transcrição usada).
 - Conferir que o agente decidiu e registrou, no log e no banco:
-  - log: `%USERPROFILE%\Autora\perfis\humor\logs\<AAAA-MM-DD>.jsonl`; eventos `decisao`
+  - log: `<dados>\perfis\humor\logs\<AAAA-MM-DD>.jsonl`; eventos `decisao`
     (etapa `conceito`: `detalhe.raciocinio`, `gancho`, `elementos_autorais`; etapa
     `plano`: o roteiro), `servico` ("O agente respondeu." com tokens), `etapa`. O
     subagente `analista-logs` monta a linha do tempo da rodada.
@@ -369,8 +372,16 @@ promoção pelo Actions e release (memória `ideia-futura-producao`).
   no passo 2.
 - Vídeo por modelo pago: desligado.
 - Interface: FastAPI + React/TypeScript (Vite) numa janela pywebview.
-- Pendente de confirmação: nomes do `GLOSSARIO.md` marcados "(?)";
-  retenção de backups de 30 dias; pasta de dados `%USERPROFILE%\Autora`.
+- Confirmado pelo usuário em 06/11/2026:
+  - Nomes do `GLOSSARIO.md`: ficam como estavam propostos (marca "(?)" retirada). A
+    interface, `textos.ts` e as mensagens da CLI usam exatamente esses nomes; o teste
+    `tests/test_vocabulario.py` barra jargão nas telas e na CLI.
+  - Retenção de cópias de segurança: 30 dias (padrão em `ConfigGlobal`, configurável).
+  - Pasta de dados: padrão `%USERPROFILE%\Autora` quando `AUTORA_DADOS` não existe.
+    Convenção do usuário: pasta-mãe com o repositório e, ao lado dele, a pasta de dados
+    (ex.: `Autora\` com `Autora\` = repositório e `dados\`), apontada por `AUTORA_DADOS`
+    em cada máquina. A tela Configurações globais mostra a pasta em uso e a origem
+    (variável ou padrão). Nenhum caminho fixo de máquina no código nem em perfil.
 
 ### Pilha
 Python 3.11 (uv) · pydantic · FastAPI/uvicorn · pywebview · SQLite com
@@ -419,7 +430,9 @@ npm); `uv run poe` lista todas. CI, pre-commit e `verificador` usam as mesmas.
 - `ferramentas/`: só desenvolvimento (servidor MCP de leitura, tarefas do poe).
 - `.claude/`: subagentes, skills, hooks e `settings.json` (ver "Ferramentas do
   Claude Code"); `.mcp.json` na raiz.
-- Dados fora do repositório: `%USERPROFILE%\Autora\` (ou `AUTORA_DADOS`).
+- Dados fora do repositório: `%USERPROFILE%\Autora\` por padrão; na convenção do
+  usuário, a pasta `dados\` ao lado do repositório, apontada por `AUTORA_DADOS` em cada
+  máquina (a tela Configurações globais mostra qual está em uso).
 
 <!-- Atualizar ao fim de cada etapa: etapa atual, comandos para rodar,
 estrutura de pastas, decisões novas tomadas com o usuário (com data). -->

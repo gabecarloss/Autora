@@ -55,3 +55,14 @@ export const CRIACAO: Record<Criacao["estado"], string> = {
   pronto: "Pronto",
   falhou: "Falhou",
 };
+
+export const PASTA_DADOS = {
+  titulo: "Pasta de dados",
+  explicacao:
+    "Onde ficam os perfis, as cópias de segurança e os posts prontos. Fica fora do programa, e cada computador pode usar uma pasta diferente.",
+  origem: {
+    variavel: "Definida pela variável de ambiente AUTORA_DADOS.",
+    padrao:
+      "Padrão: a pasta Autora dentro da sua pasta de usuário. Para usar outra, defina a variável de ambiente AUTORA_DADOS antes de abrir o app.",
+  },
+} as const;

@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from autora.backup.backup import aplicar_retencao, backup_diario, fazer_backup, pasta_backups
-from autora.config import maquina, segredos
+from autora.config import global_config, maquina, segredos
 from autora.perfil.exportar import ExportacaoBloqueada, ImportacaoInvalida, exportar, importar
 from autora.perfil.perfil import Perfil
 from autora.registro.log import Registro
@@ -84,7 +84,36 @@ def test_apelido_de_pasta_resolve_so_dentro_dela(dados: Path, tmp_path: Path) ->
         maquina.resolver("outro:v.mp4", dados)
 
 
+def test_pasta_de_dados_padrao_e_origem(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Sem AUTORA_DADOS: Autora dentro da pasta do usuário. Com ela: a pasta indicada."""
+    monkeypatch.setattr(Path, "home", lambda: tmp_path / "usuario")
+    monkeypatch.delenv("AUTORA_DADOS", raising=False)
+    assert global_config.pasta_dados() == tmp_path / "usuario" / "Autora"
+    assert global_config.origem_pasta_dados() == "padrao"
+    monkeypatch.setenv("AUTORA_DADOS", str(tmp_path / "mae" / "dados"))
+    assert global_config.pasta_dados() == tmp_path / "mae" / "dados"
+    assert global_config.origem_pasta_dados() == "variavel"
+    monkeypatch.setenv("AUTORA_DADOS", "")
+    assert global_config.origem_pasta_dados() == "padrao"
+
+
 # --- backup -----------------------------------------------------------------
+def test_retencao_padrao_de_backups_e_30_dias(dados: Path) -> None:
+    """Decisão do usuário (06/11/2026): 30 dias. O backup diário aplica esse padrão."""
+    assert global_config.ConfigGlobal().retencao_backups_dias == 30
+    p = Perfil.criar(dados, "humor", "Humor")
+    de_hoje = fazer_backup(p, dados)
+    assert de_hoje is not None
+    pasta = pasta_backups(dados, "humor")
+    com_31 = pasta / f"{(hoje() - timedelta(days=31)).isoformat()}.zip"
+    com_29 = pasta / f"{(hoje() - timedelta(days=29)).isoformat()}.zip"
+    for arq in (com_31, com_29):
+        arq.write_bytes(de_hoje.read_bytes())
+    assert backup_diario(dados) == {"humor": "já havia de hoje"}
+    assert not com_31.exists()
+    assert com_29.exists() and de_hoje.exists()
+
+
 def test_backup_diario_nao_duplica_e_respeita_retencao(dados: Path) -> None:
     p = Perfil.criar(dados, "humor", "Humor")
     primeiro = fazer_backup(p, dados)

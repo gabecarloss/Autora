@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api";
 import { ConexaoAgente } from "../componentes/ConexaoAgente";
 import { NiveisAgente } from "../componentes/NiveisAgente";
+import { PASTA_DADOS } from "../textos";
 
 function ModoCriacao() {
   const qc = useQueryClient();
@@ -47,6 +48,25 @@ function ModoCriacao() {
   );
 }
 
+function PastaDados() {
+  const sistema = useQuery({ queryKey: ["sistema"], queryFn: api.sistema });
+  const s = sistema.data;
+  return (
+    <div className="cartao">
+      <h2>{PASTA_DADOS.titulo}</h2>
+      <p className="explicacao">{PASTA_DADOS.explicacao}</p>
+      {sistema.isLoading && <p>Carregando…</p>}
+      {sistema.isError && <p className="alerta">{sistema.error.message}</p>}
+      {s && (
+        <p>
+          <code>{s.pasta_dados}</code>
+          <span className="detalhe"> {PASTA_DADOS.origem[s.origem_pasta_dados]}</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function ConfiguracoesGlobais() {
   return (
     <section>
@@ -55,6 +75,7 @@ export function ConfiguracoesGlobais() {
       <ConexaoAgente />
       <NiveisAgente />
       <ModoCriacao />
+      <PastaDados />
     </section>
   );
 }

@@ -90,9 +90,7 @@ def gerar(
     pasta: Annotated[
         Path | None, typer.Option("--pasta", help="pasta de vídeos a vincular antes de criar")
     ] = None,
-    teste: bool = typer.Option(
-        False, "--teste", help="rodada de teste (marcada como tal no banco)"
-    ),
+    teste: bool = typer.Option(False, "--teste", help="lote de teste (marcado como tal no banco)"),
 ) -> None:
     """Cria um post agora com o agente conectado no app (o mesmo que o botão "Criar agora")."""
     dados = pasta_dados()

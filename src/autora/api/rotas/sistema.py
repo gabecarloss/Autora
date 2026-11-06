@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from autora.api.esquemas import PedidoEstrito
 from autora.config import global_config
+from autora.config.global_config import OrigemPastaDados
 from autora.registro.log import registro_global
 
 rotas = APIRouter(prefix="/api/sistema", tags=["sistema"])
@@ -18,6 +19,9 @@ class EstadoSistema(BaseModel):
     estado: Literal["ligado", "pausado", "manual"]
     modo: Literal["automatico", "manual"]
     pausado: bool
+    pasta_dados: str
+    """Pasta de dados em uso nesta máquina (mostrada em Configurações globais)."""
+    origem_pasta_dados: OrigemPastaDados
 
 
 class PedidoModo(PedidoEstrito):
@@ -25,8 +29,15 @@ class PedidoModo(PedidoEstrito):
 
 
 def _estado(request: Request) -> EstadoSistema:
-    cfg = global_config.carregar(request.app.state.dados)
-    return EstadoSistema(estado=cfg.estado_sistema, modo=cfg.modo, pausado=cfg.pausado)
+    dados = request.app.state.dados
+    cfg = global_config.carregar(dados)
+    return EstadoSistema(
+        estado=cfg.estado_sistema,
+        modo=cfg.modo,
+        pausado=cfg.pausado,
+        pasta_dados=str(dados),
+        origem_pasta_dados=global_config.origem_pasta_dados(),
+    )
 
 
 @rotas.get("")

@@ -1,7 +1,10 @@
 """Configuração global do app (global.json). Nunca contém segredos.
 
-A pasta de dados fica fora do repositório. Padrão: %USERPROFILE%\\Autora.
-Pode ser trocada pela variável de ambiente AUTORA_DADOS.
+A pasta de dados fica fora do repositório. Padrão: %USERPROFILE%\\Autora. Pode ser
+trocada pela variável de ambiente AUTORA_DADOS, definida em cada máquina. A convenção do
+usuário (decisão de 06/11/2026) é uma pasta-mãe com o repositório e, ao lado dele, a
+pasta de dados (ex.: pasta-mãe com `Autora\\` = repositório e `dados\\`), apontada por
+AUTORA_DADOS. Nenhum caminho fixo de máquina entra no código nem em perfil.
 """
 
 from __future__ import annotations
@@ -19,6 +22,7 @@ ModoGeracao = Literal["automatico", "manual"]
 TipoConexao = Literal["nenhuma", "assinatura", "chave"]
 Etapa = Literal["estudo", "conceito", "plano", "revisor", "verificacoes", "indexacao", "teste"]
 Nivel = Literal["automatico", "rapido", "equilibrado", "maximo"]
+OrigemPastaDados = Literal["variavel", "padrao"]
 
 ETAPAS: tuple[Etapa, ...] = (
     "estudo",
@@ -37,6 +41,11 @@ def pasta_dados() -> Path:
     raiz = Path(env) if env else Path.home() / "Autora"
     raiz.mkdir(parents=True, exist_ok=True)
     return raiz
+
+
+def origem_pasta_dados() -> OrigemPastaDados:
+    """De onde veio a pasta de dados: da variável AUTORA_DADOS ou do padrão."""
+    return "variavel" if os.environ.get("AUTORA_DADOS") else "padrao"
 
 
 def _niveis_padrao() -> dict[Etapa, Nivel]:
@@ -64,7 +73,7 @@ class ConfigGlobal(BaseModel):
     modo: ModoGeracao = "automatico"
     pausado: bool = False
     retencao_logs_dias: int = Field(default=90, ge=7, le=3650)
-    # Padrão provisório (não definido no briefing): 30 dias. Confirmar com o usuário.
+    # Decisão do usuário (06/11/2026): 30 dias; configurável na tela no futuro (seção 9.4).
     retencao_backups_dias: int = Field(default=30, ge=1, le=3650)
     agente: ConexaoAgente = Field(default_factory=ConexaoAgente)
 

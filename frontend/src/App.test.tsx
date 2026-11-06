@@ -5,7 +5,13 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { App } from "./App";
 
 const respostas: Record<string, unknown> = {
-  "/api/sistema": { estado: "pausado", modo: "automatico", pausado: true },
+  "/api/sistema": {
+    estado: "pausado",
+    modo: "automatico",
+    pausado: true,
+    pasta_dados: "C:\\Exemplo\\dados",
+    origem_pasta_dados: "variavel",
+  },
   "/api/perfis": [],
   "/api/agente": {
     tipo: "nenhuma",
@@ -79,6 +85,12 @@ test("configurações globais mostram a conexão do agente", async () => {
     "password",
   );
   expect(await screen.findByText("Estudo do dia")).toBeInTheDocument();
+});
+
+test("configurações globais mostram a pasta de dados em uso e de onde veio", async () => {
+  montar("/configuracoes");
+  expect(await screen.findByText("C:\\Exemplo\\dados")).toBeInTheDocument();
+  expect(screen.getByText(/variável de ambiente AUTORA_DADOS/)).toBeInTheDocument();
 });
 
 test("lista de perfis tem o botão Criar agora e mostra o estado da criação", async () => {

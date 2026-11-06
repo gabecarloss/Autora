@@ -57,6 +57,12 @@ def test_cabecalhos_de_seguranca_e_docs_desligados(cliente: TestClient) -> None:
     assert cliente.get("/api/openapi.json", headers=_h()).status_code == 404
 
 
+def test_sistema_informa_a_pasta_de_dados_e_a_origem(cliente: TestClient, dados: Path) -> None:
+    r = cliente.get("/api/sistema", headers=_h()).json()
+    assert r["pasta_dados"] == str(dados)
+    assert r["origem_pasta_dados"] == "variavel"  # a fixture `dados` define AUTORA_DADOS
+
+
 def test_pausar_ligar_e_modo(cliente: TestClient, dados: Path) -> None:
     assert cliente.get("/api/sistema", headers=_h()).json()["estado"] == "ligado"
     assert cliente.post("/api/sistema/pausar", headers=_h()).json()["estado"] == "pausado"

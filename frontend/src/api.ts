@@ -4,6 +4,8 @@ export type EstadoSistema = {
   estado: "ligado" | "pausado" | "manual";
   modo: "automatico" | "manual";
   pausado: boolean;
+  pasta_dados: string;
+  origem_pasta_dados: "variavel" | "padrao";
 };
 
 export type Etapa =
