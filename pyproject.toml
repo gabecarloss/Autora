@@ -1,0 +1,199 @@
+[project]
+name = "autora"
+version = "0.1.0"
+description = "Agente local que transforma uma biblioteca de vídeos em conteúdo autoral para redes sociais."
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "pydantic>=2.9",
+    "typer>=0.12",
+    "keyring>=25.0",
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "pywebview>=5.3",
+    "anthropic>=0.40",
+    "faster-whisper>=1.1",
+    "imagehash>=4.3",
+    "pillow>=10.4",
+]
+
+[project.scripts]
+autora = "autora.cli:app"
+autora-app = "autora.app:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "httpx>=0.27",
+    "ruff>=0.7",
+    "mypy>=1.13",
+    "pre-commit>=4.0",
+    "pip-audit>=2.7",
+    "poethepoet>=0.49.0",
+    "import-linter>=2.15",
+    "deptry>=0.25.1",
+    "pytest-cov>=7.1.0",
+    "mcp>=2.3.0",
+]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/autora"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF", "T20", "PTH"]
+ignore = [
+    "RUF001", "RUF002", "RUF003",  # acentos e travessões em português são intencionais
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["autora", "ferramentas"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "S108"]
+".claude/hooks/**" = ["T20"]  # hooks conversam com o Claude Code pelo stdout/stderr
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = "src"
+files = ["src/autora", "ferramentas", ".claude/hooks"]
+strict = true
+warn_unreachable = true
+
+# --- Tarefas (equivalente aos "scripts" do npm): `uv run poe <tarefa>` ----------------
+# Fonte única dos comandos: CI, pre-commit, subagente verificador e skills chamam estas.
+[tool.poe]
+verbosity = -1
+
+[tool.poe.tasks.testar]
+help = "Testes (agente simulado) com cobertura"
+cmd = "pytest --cov=autora --cov=ferramentas --cov-report=term:skip-covered"
+
+[tool.coverage.report]
+# Piso de cobertura: SÓ SOBE. O /fechar-passo eleva até a cobertura atual
+# (arredondada para baixo); nunca reduza para fazer a verificação passar.
+fail_under = 75
+
+[tool.poe.tasks.testar-agente]
+help = "Testes de integração com o agente real (gasta uso da assinatura)"
+cmd = "pytest -m agente"
+
+[tool.poe.tasks.ruff]
+help = "Lint e formato do Python (só confere)"
+sequence = [
+    { cmd = "ruff check src tests ferramentas .claude/hooks" },
+    { cmd = "ruff format --check src tests ferramentas .claude/hooks" },
+]
+ignore_fail = "return_non_zero"
+
+[tool.poe.tasks.tipos]
+help = "Tipos (mypy strict)"
+cmd = "mypy"
+
+[tool.poe.tasks.camadas]
+help = "Contratos de importação entre módulos (import-linter)"
+cmd = "lint-imports"
+
+[tool.poe.tasks.dependencias]
+help = "Dependências declaradas x usadas (deptry)"
+cmd = "deptry ."
+
+[tool.poe.tasks.lint]
+help = "Todas as checagens estáticas do Python"
+sequence = ["ruff", "tipos", "camadas", "dependencias"]
+ignore_fail = "return_non_zero"
+
+[tool.poe.tasks.formatar]
+help = "Formata Python e front"
+sequence = [
+    { cmd = "ruff format src tests ferramentas .claude/hooks" },
+    { cmd = "ruff check --fix src tests ferramentas .claude/hooks" },
+    { script = "ferramentas.tarefas:npm('format')" },
+]
+
+[tool.poe.tasks.front]
+help = "Front: tipos, lint, formato, testes e build"
+script = "ferramentas.tarefas:npm('typecheck', 'lint', 'format:check', 'test', 'build')"
+
+[tool.poe.tasks.auditar]
+help = "Vulnerabilidades conhecidas nas dependências"
+sequence = [
+    { cmd = "pip-audit --skip-editable" },
+    { script = "ferramentas.tarefas:npm_audit()" },
+]
+ignore_fail = "return_non_zero"
+
+[tool.poe.tasks.verificar]
+help = "Tudo: lint + testes + front (não para no primeiro erro)"
+sequence = ["lint", "testar", "front"]
+ignore_fail = "return_non_zero"
+
+[tool.poe.tasks.dev]
+help = "Abre o app em modo desenvolvimento (o Vite roda à parte: npm run dev em frontend/)"
+cmd = "autora-app --dev"
+
+# --- Contratos de importação (import-linter) -------------------------------------------
+[tool.importlinter]
+root_packages = ["autora"]
+
+[[tool.importlinter.contracts]]
+# CLAUDE.md: separe o que é do TikTok do que é genérico. Só a própria camada de
+# plataformas e os pontos de montagem (api, app, cli) podem conhecer o TikTok.
+name = "O núcleo genérico não depende do TikTok"
+type = "forbidden"
+source_modules = [
+    "autora.agente", "autora.backup", "autora.biblioteca", "autora.config", "autora.db",
+    "autora.edicao", "autora.perfil", "autora.registro", "autora.rodada", "autora.servicos",
+    "autora.util",
+]
+forbidden_modules = ["autora.plataformas.tiktok"]
+
+[[tool.importlinter.contracts]]
+name = "Só o app monta o servidor local (nada importa a api)"
+type = "forbidden"
+source_modules = [
+    "autora.agente", "autora.backup", "autora.biblioteca", "autora.cli", "autora.config",
+    "autora.db", "autora.edicao", "autora.perfil", "autora.plataformas", "autora.registro",
+    "autora.rodada", "autora.servicos", "autora.util",
+]
+forbidden_modules = ["autora.api"]
+
+[[tool.importlinter.contracts]]
+name = "Utilidades são a base (não importam o resto do app)"
+type = "forbidden"
+source_modules = ["autora.util"]
+forbidden_modules = [
+    "autora.agente", "autora.api", "autora.backup", "autora.biblioteca", "autora.config",
+    "autora.db", "autora.edicao", "autora.perfil", "autora.plataformas", "autora.registro",
+    "autora.rodada", "autora.servicos",
+]
+
+# --- Dependências declaradas x usadas (deptry) -----------------------------------------
+[tool.deptry]
+known_first_party = ["autora"]
+# ferramentas/ e .claude/ são só de desenvolvimento (usam o grupo dev).
+extend_exclude = ["ferramentas", "\\.claude", "frontend"]
+
+[tool.deptry.per_rule_ignores]
+# PROVISÓRIO: declaradas no passo 1, passam a ser usadas no passo 2 (legendas) e no
+# passo 3 (indexação). Remover daqui quando forem importadas.
+DEP002 = ["faster-whisper", "imagehash", "pillow"]
+
+[[tool.mypy.overrides]]
+module = ["webview", "webview.*", "keyring", "keyring.*", "imagehash", "faster_whisper"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m 'not agente'"
+markers = [
+    "agente: testes de integração que chamam o agente real (rodar com -m agente)",
+]

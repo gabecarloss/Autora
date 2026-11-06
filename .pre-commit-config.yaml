@@ -1,0 +1,68 @@
+# Checagens antes de cada commit. Instalar: `uv run pre-commit install`
+# Rodar em tudo: `uv run pre-commit run --all-files`
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+      - id: detect-private-key
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+        exclude: ^frontend/tsconfig\.json$
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        exclude: \.md$
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.4
+    hooks:
+      - id: ruff-check
+        args: ["--fix"]
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: uv run poe tipos
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: camadas
+        name: contratos de importação (import-linter)
+        entry: uv run poe camadas
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: dependencias
+        name: dependências declaradas x usadas (deptry)
+        entry: uv run poe dependencias
+        language: system
+        files: (\.py|pyproject\.toml)$
+        pass_filenames: false
+      - id: eslint
+        name: eslint (frontend)
+        entry: npm --prefix frontend run lint
+        language: system
+        files: ^frontend/src/
+        pass_filenames: false
+      - id: prettier
+        name: prettier (frontend)
+        entry: npm --prefix frontend run format:check
+        language: system
+        files: ^frontend/src/
+        pass_filenames: false
+      - id: tsc
+        name: typescript (frontend)
+        entry: npm --prefix frontend run typecheck
+        language: system
+        files: ^frontend/
+        pass_filenames: false

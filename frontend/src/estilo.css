@@ -1,0 +1,256 @@
+:root {
+  --fundo: #f6f5f2;
+  --painel: #ffffff;
+  --texto: #1f1d1a;
+  --suave: #6b665e;
+  --linha: #e3e0da;
+  --destaque: #c2410c;
+  --ok: #15803d;
+  --alerta: #b45309;
+  --perigo: #b91c1c;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  color: var(--texto);
+  background: var(--fundo);
+  line-height: 1.5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+
+.barra-lateral {
+  background: #1f1d1a;
+  color: #f6f5f2;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.marca {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.barra-lateral ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.barra-lateral a {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.barra-lateral a:hover {
+  background: #33302b;
+}
+
+.barra-lateral a.active {
+  background: var(--destaque);
+}
+
+.estado-sistema {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.indicador {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.indicador-ligado {
+  background: #22c55e;
+}
+
+.indicador-pausado {
+  background: #f59e0b;
+}
+
+.indicador-manual {
+  background: #60a5fa;
+}
+
+.conteudo {
+  padding: 32px 40px;
+  max-width: 920px;
+}
+
+h1 {
+  margin-top: 0;
+}
+
+.explicacao {
+  color: var(--suave);
+}
+
+.detalhe {
+  color: var(--suave);
+  font-size: 0.85rem;
+  font-weight: normal;
+}
+
+.cartao {
+  background: var(--painel);
+  border: 1px solid var(--linha);
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin: 20px 0;
+}
+
+.cartao h2 {
+  margin-top: 0;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 12px 0;
+}
+
+label.opcao {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+input[type="password"],
+input:not([type]),
+select {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+  max-width: 480px;
+}
+
+fieldset {
+  border: 1px solid var(--linha);
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+button {
+  font: inherit;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--destaque);
+  background: var(--destaque);
+  color: #fff;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+button.secundario {
+  background: transparent;
+  color: var(--texto);
+  border-color: var(--linha);
+}
+
+button.perigo {
+  background: var(--perigo);
+  border-color: var(--perigo);
+}
+
+.barra-lateral button {
+  padding: 4px 10px;
+  font-size: 0.85rem;
+}
+
+.acoes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 12px 0;
+}
+
+.confirmacao {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.resultado {
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 12px 0;
+  border: 1px solid var(--linha);
+}
+
+.resultado.ok {
+  border-color: var(--ok);
+}
+
+.resultado blockquote {
+  margin: 8px 0;
+  font-style: italic;
+}
+
+.alerta {
+  color: var(--alerta);
+}
+
+.aviso {
+  display: inline-block;
+  background: #fef3c7;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.passos li {
+  margin: 8px 0;
+}
+
+.tabela {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.tabela th,
+.tabela td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--linha);
+  vertical-align: top;
+}
+
+.lista-perfis {
+  padding-left: 18px;
+}

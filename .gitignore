@@ -1,0 +1,70 @@
+# --- Ambiente Python e caches ---
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# --- Front ---
+node_modules/
+frontend/dist/
+frontend/coverage/
+*.tsbuildinfo
+
+# --- Segredos (chaves ficam só no Cofre de Credenciais do Windows) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Dados do app (ficam fora do repositório; isto é proteção extra) ---
+dados/
+saida/
+logs/
+backups/
+perfis/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.zip
+
+# --- Mídia ---
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.webm
+*.wav
+*.mp3
+*.m4a
+*.aac
+*.flac
+*.ogg
+
+# --- Pesos de modelos ---
+*.pt
+*.pth
+*.bin
+*.onnx
+*.safetensors
+*.ckpt
+*.gguf
+
+# --- Sistema e editores ---
+Thumbs.db
+desktop.ini
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.claude/settings.local.json
